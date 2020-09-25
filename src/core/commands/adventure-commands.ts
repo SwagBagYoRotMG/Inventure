@@ -1,5 +1,6 @@
 import { Message, MessageEmbed, EmbedFieldData, User, CollectorFilter, Collection, MessageReaction } from "discord.js";
 import { textChangeRangeIsUnchanged } from "typescript";
+import { Guild } from "../../models/Guild";
 import { Player } from '../../models/Player';
 import { Reply } from "../Reply";
 import BaseCommands from "./base-commands";
@@ -10,11 +11,13 @@ class AdventureCommands extends BaseCommands {
     // }
 
     async adventure() {
-        // TODO: Check for existing adventures running in models/Guild.ts data
+        if (this.guild.isCurrentlyAdventuring()) {
+            return await this.message.channel.send('There is already a battle taking place.');
+        }
 
-        // TODO: Check adventure cooldown is okay
-
-        // TODO: Lock in this adventure! Let's GO!
+        if (this.guild.cannotAdventure()) {
+            return await this.message.channel.send(`No heroes are ready to depart in an adventure. Try again in 22 seconds`);
+        }
 
         const reactions = await this.startAdventure();
 
@@ -22,6 +25,8 @@ class AdventureCommands extends BaseCommands {
     }
 
     private async startAdventure(): Promise<Collection<String, MessageReaction>> {
+        this.guild.startAdventure('battle');
+
         // TODO: Actually pick a random monster
 
         const reply = new Reply({
@@ -112,7 +117,9 @@ class AdventureCommands extends BaseCommands {
                 },
             ]);
 
-        this.message.channel.send(embed)
+        this.message.channel.send(embed);
+
+        return this.guild.stopAdventure();
 
         // TODO: End battle (update data in Guild model)
 

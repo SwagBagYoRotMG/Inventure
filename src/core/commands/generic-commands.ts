@@ -20,6 +20,7 @@ class GenericCommands extends BaseCommands {
 
         player = new Player({
             id: this.user.id,
+            guildId: this.guild.get('id'),
             username: this.user.username,
         });
 

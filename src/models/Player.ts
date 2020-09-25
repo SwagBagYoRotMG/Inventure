@@ -2,7 +2,13 @@ import { Schema, model } from 'mongoose';
 import { ItemSchema } from './Item';
 
 const PlayerSchema = new Schema({
-    id: String,
+    id: {
+        type: String,
+        index: true,
+    },
+    guildId: {
+        type: String,
+    },
     username: String,
     class: {
         type: String,
