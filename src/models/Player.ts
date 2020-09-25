@@ -40,7 +40,7 @@ const PlayerSchema = new Schema({
     },
     currency: {
         type: Number,
-        default: 0,
+        default: 1000,
         min: 0,
     },
     experience: {
