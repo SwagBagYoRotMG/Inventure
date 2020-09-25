@@ -1,5 +1,25 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import { ItemSchema } from './Item';
+
+interface IPlayer extends Document {
+    id: string,
+    guildId: string,
+    username: string,
+    class: string,
+    background: string,
+    experience: number,
+    level: number,
+    rebirths: number,
+    currency: number,
+    getLevel: Function,
+    getHeroClass: Function,
+    getHeroClassDescription: Function,
+    getHeroClassThumbnail: Function,
+    getRebirths: Function,
+    getMaxLevel: Function,
+    getStat: Function,
+    getSkillpoint: Function,
+}
 
 const PlayerSchema = new Schema({
     id: {
@@ -18,6 +38,11 @@ const PlayerSchema = new Schema({
         type: String,
         default: null,
     },
+    currency: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
     experience: {
         type: Number,
         default: 0,
@@ -32,6 +57,28 @@ const PlayerSchema = new Schema({
         type: Number,
         default: 0,
         min: 0,
+    },
+    skillpoints: {
+        unspent: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        attack: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        intelligence: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
+        charisma: {
+            type: Number,
+            default: 0,
+            min: 0,
+        },
     },
     stats: {
         attack: {
@@ -125,6 +172,39 @@ const PlayerSchema = new Schema({
     }
 });
 
-const Player = model('Player', PlayerSchema);
+PlayerSchema.methods.getLevel = function () {
+    return this.get('level') || 1;
+};
 
-export { Player, PlayerSchema };
+PlayerSchema.methods.getHeroClass = function (): string {
+    return this.get('class') || 'Hero';
+};
+
+PlayerSchema.methods.getStat = function (stat: string): number {
+    return this.get('stats')[stat] || 0;
+};
+
+PlayerSchema.methods.getSkillpoint = function (skillpoint: string) {
+    return this.get('skillpoints')[skillpoint] || 0;
+};
+
+PlayerSchema.methods.getHeroClassDescription = function () {
+    return 'TODO: Berserkers have the option to rage and add big bonuses to attacks, but fumbles hurt. Use the rage command when attacking in an adventure.';
+};
+
+PlayerSchema.methods.getHeroClassThumbnail = function () {
+    return 'https://trello-attachments.s3.amazonaws.com/5f6ae9c8643990173240eb3c/5f6b44d2da1f5b269987c47e/5cc20b78734ffe0d264885ada90cd961/CLASSBarbarian.JPG';
+};
+
+PlayerSchema.methods.getRebirths = function () {
+    return this.get('rebirths') || 0;
+};
+
+PlayerSchema.methods.getMaxLevel = function () {
+    return this.get('maxLevel') || 1;
+};
+
+
+const Player = model<IPlayer>('Player', PlayerSchema);
+
+export { Player, PlayerSchema, IPlayer };

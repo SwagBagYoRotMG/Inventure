@@ -1,4 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose';
+import { addSeconds, isAfter } from 'date-fns';
+import AdventureConfig from '../config/adventure';
 
 interface IGuild extends Document {
     id: String;
@@ -14,7 +16,8 @@ interface IGuild extends Document {
     isCurrentlyAdventuring: Function;
     startAdventure: Function;
     stopAdventure: Function;
-    cannotAdventure: Function;
+    canAdventure: Function;
+    adventureCooldown: Function;
 }
 
 const GuildSchema = new Schema({
@@ -68,10 +71,24 @@ GuildSchema.methods.isCurrentlyAdventuring = function () {
     return this.currentAdventure.exists === true;
 };
 
-GuildSchema.methods.cannotAdventure = function () {
-    // WIP
-    return true;
-    // return this.currentAdventure.exists === true;
+GuildSchema.methods.canAdventure = function (date: Date) {
+    if (!this.lastAdventure.exists) {
+        return true;
+    }
+
+    const cooldown = this.adventureCooldown();
+
+    if (!cooldown) {
+        return true;
+    }
+
+
+    return isAfter(date, this.adventureCooldown());
+};
+
+GuildSchema.methods.adventureCooldown = function (): Date {
+    const timeEnded = this.lastAdventure.timeEnded;
+    return addSeconds(timeEnded, AdventureConfig.adventureCooldownInSeconds);
 };
 
 GuildSchema.methods.startAdventure = function (type: String): Promise<any> {
@@ -84,15 +101,19 @@ GuildSchema.methods.startAdventure = function (type: String): Promise<any> {
 };
 
 GuildSchema.methods.stopAdventure = function (): Promise<any> {
-    this.timeEnded = Date.now();
-    this.currentAdventure = {
-        exists: false,
-    };
 
     this.lastAdventure = {
         exists: true,
         type: this.currentAdventure.type,
+        timeEnded: new Date,
     };
+
+    this.currentAdventure = {
+        exists: false,
+    };
+
+
+    // this.markModified('timeEnded');
 
     return this.save();
 };

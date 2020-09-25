@@ -1,5 +1,5 @@
 import { Message, User } from "discord.js";
-import { IGuild } from "../../models/Guild";
+import { IGuild } from "../models/Guild";
 
 export default abstract class BaseCommands {
     protected user: User;
