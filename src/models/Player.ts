@@ -19,6 +19,9 @@ interface IPlayer extends Document {
     getMaxLevel: Function,
     getStat: Function,
     getSkillpoint: Function,
+    getCurrency: Function,
+    setCurrency: Function,
+    admin: Boolean,
 }
 
 const PlayerSchema = new Schema({
@@ -29,7 +32,13 @@ const PlayerSchema = new Schema({
     guildId: {
         type: String,
     },
-    username: String,
+    username: {
+        type: String,
+    },
+    admin: {
+        type: Boolean,
+        default: false
+    },
     class: {
         type: String,
         default: null,
@@ -203,6 +212,30 @@ PlayerSchema.methods.getRebirths = function () {
 PlayerSchema.methods.getMaxLevel = function () {
     return this.get('maxLevel') || 1;
 };
+
+PlayerSchema.methods.getCurrency = function () {
+    return this.get('currency') || 0;
+};
+
+PlayerSchema.methods.setCurrency = async function (amount: number, id: string): Promise<any> {
+    let cur = amount;
+    let pid = id;
+
+    let doc =  await Player.findOne({ id: pid }).exec();
+    if(doc != null)
+            {
+                let currentCurrency = this.currency;
+                this.currency = {
+                    currency: currentCurrency + cur,
+                    type: this.currency.type,
+                };
+        
+                return this.currency();
+            }
+
+    return this.save();
+};
+
 
 
 const Player = model<IPlayer>('Player', PlayerSchema);

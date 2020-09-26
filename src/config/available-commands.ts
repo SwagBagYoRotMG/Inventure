@@ -8,4 +8,5 @@ export default {
     adventure: { class: AdventureCommands, method: 'adventure' },
     a: { class: AdventureCommands, method: 'adventure' },
     clear: { class: AdminCommands, method: 'clearAdventure' },
+    givecur: { class: AdminCommands, method: 'giveCurrency' },
 }
