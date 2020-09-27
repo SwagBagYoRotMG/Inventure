@@ -5,6 +5,7 @@ interface IPlayer extends Document {
     id: string,
     guildId: string,
     username: string,
+    admin: Boolean,
     class: string,
     background: string,
     experience: number,
@@ -19,9 +20,7 @@ interface IPlayer extends Document {
     getMaxLevel: Function,
     getStat: Function,
     getSkillpoint: Function,
-    getCurrency: Function,
-    setCurrency: Function,
-    admin: Boolean,
+    getIdFromName: Function,
 }
 
 const PlayerSchema = new Schema({
@@ -213,29 +212,11 @@ PlayerSchema.methods.getMaxLevel = function () {
     return this.get('maxLevel') || 1;
 };
 
-PlayerSchema.methods.getCurrency = function () {
-    return this.get('currency') || 0;
+PlayerSchema.methods.getIdFromName = function (id: string) {
+    let idSymbol = id;
+    let idNoSymbol = id.replace(/[!@<>]/g,'');
+    return idNoSymbol;
 };
-
-PlayerSchema.methods.setCurrency = async function (amount: number, id: string): Promise<any> {
-    let cur = amount;
-    let pid = id;
-
-    let doc =  await Player.findOne({ id: pid }).exec();
-    if(doc != null)
-            {
-                let currentCurrency = this.currency;
-                this.currency = {
-                    currency: currentCurrency + cur,
-                    type: this.currency.type,
-                };
-        
-                return this.currency();
-            }
-
-    return this.save();
-};
-
 
 
 const Player = model<IPlayer>('Player', PlayerSchema);

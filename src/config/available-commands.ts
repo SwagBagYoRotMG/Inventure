@@ -8,5 +8,9 @@ export default {
     adventure: { class: AdventureCommands, method: 'adventure' },
     a: { class: AdventureCommands, method: 'adventure' },
     clear: { class: AdminCommands, method: 'clearAdventure' },
-    givecur: { class: AdminCommands, method: 'giveCurrency' },
+    addcur: { class: AdminCommands, method: 'addCurrency' },
+    makeadmin: { class: AdminCommands, method: 'makeAdmin' },
+    changelevel: { class: AdminCommands, method: 'changeLevel' },
+    changerebirths: { class: AdminCommands, method: 'changeRebirths' },
+    resetcooldowns: { class: AdminCommands, method: 'resetCooldowns' },
 }
