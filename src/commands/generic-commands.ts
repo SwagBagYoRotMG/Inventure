@@ -1,5 +1,4 @@
 import { MessageEmbed, EmbedFieldData } from "discord.js";
-import { workerData } from "worker_threads";
 import { makeClassNotSelectedMessage } from "../messages/class-not-selected";
 import { makeClassSelectedMessage } from "../messages/class-selected";
 import { makeInvalidHeroclassMessage } from "../messages/invalid-heroclass";
@@ -89,15 +88,15 @@ class GenericCommands extends BaseCommands {
         }
 
     }
+    
     // Takes any string and fixes the case so that only the first letter is Uppercase for display and proper DB storage.
     private async fixCase(word: string){
         let preCase = word;
         let lowerCase = preCase.toLowerCase();
         let fixedCase = lowerCase.charAt(0).toUpperCase() + lowerCase.slice(1);
+      
         return fixedCase;
-
-        }
-    
+    }
 }
 
 export { GenericCommands };

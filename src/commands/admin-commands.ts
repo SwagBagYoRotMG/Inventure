@@ -30,7 +30,7 @@ class AdminCommands extends BaseCommands {
             return isAdmin;
         }
     }
-    
+
     // Makes any player an administrator with -makeadmin [@username] ?[password] (Password is optional. If you are already an admin you don't need to enter it.)
     async makeAdmin(id: string, password?: string) {
 
@@ -55,6 +55,7 @@ class AdminCommands extends BaseCommands {
          }
 
     }
+
     // Clears any adventure currently on the board
     async clearAdventure() {
         
