@@ -6,6 +6,7 @@ interface IPlayer extends Document {
     guildId: string,
     username: string,
     admin: Boolean,
+    banned: Boolean,
     class: string,
     background: string,
     experience: number,
@@ -21,6 +22,7 @@ interface IPlayer extends Document {
     getStat: Function,
     getSkillpoint: Function,
     getIdFromName: Function,
+    banCheck: Function,
 }
 
 const PlayerSchema = new Schema({
@@ -35,6 +37,10 @@ const PlayerSchema = new Schema({
         type: String,
     },
     admin: {
+        type: Boolean,
+        default: false
+    },
+    banned: {
         type: Boolean,
         default: false
     },
@@ -216,6 +222,13 @@ PlayerSchema.methods.getIdFromName = function (id: string) {
     let idSymbol = id;
     let idNoSymbol = id.replace(/[!@<>]/g,'');
     return idNoSymbol;
+};
+
+PlayerSchema.methods.banCheck = async function(id: string){
+    const messageID = id;
+    const findSenderDoc = await  Player.findOne({ id: messageID }).exec();
+    const senderBanCheck = await findSenderDoc?.get('banned');
+    return senderBanCheck;
 };
 
 
