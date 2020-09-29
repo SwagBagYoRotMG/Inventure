@@ -1,5 +1,4 @@
 import { MessageEmbed, EmbedFieldData } from "discord.js";
-import { workerData } from "worker_threads";
 import { makeInsufficientFundsClassNotSelectedMessage } from "../messages/insufficient-funds-class-not-selected";
 import { makeClassNotSelectedMessage } from "../messages/class-not-selected";
 import { makeClassSelectedMessage } from "../messages/class-selected";
