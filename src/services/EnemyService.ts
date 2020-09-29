@@ -20,6 +20,8 @@ class EnemyService {
 
         const enemyPool: Array<IEnemy> = [];
 
+        
+
         enemies.forEach((enemy: IEnemy) => {
             const isWithinSuitableRange = enemy.baseHp >= (statRange.min * 0.75) && enemy.baseHp <= (statRange.max * 1.2);
 

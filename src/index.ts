@@ -6,6 +6,7 @@ import { connect } from 'mongoose';
 import PlayerService from './services/PlayerService';
 import availableCommands from './config/available-commands';
 import { Guild as GuildModel } from './models/Guild';
+import { Player, IPlayer } from "./models/Player";
 
 (async () => {
     await connect('mongodb://127.0.0.1:27017/inventure', {
@@ -25,6 +26,17 @@ import { Guild as GuildModel } from './models/Guild';
     // Create an event listener for messages
     client.on('message', async (message: Message) => {
         const prefix = process.env.PREFIX || '-';
+
+        const messageID = message.author.id;
+        let sender = await Player.findOne({ id: messageID }).exec();
+        const banCheckResults = await sender?.banCheck(messageID);
+        
+
+        if(message.content.startsWith(prefix) && banCheckResults === true)
+        {
+            message.channel.send(`Oops, it looks like you're banned. If you believe this is a mistake, please speak with an administrator.`);
+            return;
+        }
 
         if (!message.content.startsWith(prefix) || message.author.bot) {
             return;

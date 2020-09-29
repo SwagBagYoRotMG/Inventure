@@ -81,8 +81,8 @@ class AdventureCommands extends BaseCommands {
         const timerMessage: Message = await this.message.channel.send(makeTimeRemainingMessage(`${duration}m 00s`, 'DARK_GREEN'));
         await this.countdownMinutes(duration, timerMessage);
 
-        // const durationInMiliseconds = duration * 60000;
-        const durationInMiliseconds = 0.1 * 60000;
+        const durationInMiliseconds = duration * 60000;
+        // const durationInMiliseconds = 0.1 * 60000;
         const reactions = await message.awaitReactions(adventureEmojisFilter, { time: durationInMiliseconds });
 
         message.delete();

@@ -5,7 +5,8 @@ interface IPlayer extends Document {
     id: string,
     guildId: string,
     username: string,
-    isAdmin: Boolean,
+    admin: Boolean,
+    banned: Boolean,
     class: string,
     background: string,
     experience: number,
@@ -13,7 +14,6 @@ interface IPlayer extends Document {
     rebirths: number,
     currency: number,
     getLevel: Function,
-    setLevel: Function,
     getHeroClass: Function,
     setHeroClass: Function,
     getHeroClassDescription: Function,
@@ -23,9 +23,8 @@ interface IPlayer extends Document {
     getStat: Function,
     getSkillpoint: Function,
     getIdFromName: Function,
-    setRebirths: Function,
-    addCurrency: Function,
-    makeAdmin: Function,
+    banCheck: Function,
+
 }
 
 const PlayerSchema = new Schema({
@@ -39,7 +38,11 @@ const PlayerSchema = new Schema({
     username: {
         type: String,
     },
-    isAdmin: {
+    admin: {
+        type: Boolean,
+        default: false
+    },
+    banned:{
         type: Boolean,
         default: false
     },
@@ -234,28 +237,11 @@ PlayerSchema.methods.getIdFromName = function (id: string) {
     return id.replace(/[!@<>]/g, '');
 };
 
-PlayerSchema.methods.setRebirths = function (rebirths: number) {
-    this.rebirths = rebirths;
-
-    return this.save();
-};
-
-PlayerSchema.methods.setLevel = function (level: number) {
-    this.level = level;
-
-    return this.save();
-};
-
-PlayerSchema.methods.addCurrency = function (amount: number) {
-    this.currency += amount;
-
-    return this.save();
-};
-
-PlayerSchema.methods.makeAdmin = function (amount: number) {
-    this.isAdmin = true;
-
-    return this.save();
+PlayerSchema.methods.banCheck = async function(id: string){
+    const messageID = id;
+    const findSenderDoc = await  Player.findOne({ id: messageID }).exec();
+    const senderBanCheck = await findSenderDoc?.get('banned');
+    return senderBanCheck;
 };
 
 const Player = model<IPlayer>('Player', PlayerSchema);
