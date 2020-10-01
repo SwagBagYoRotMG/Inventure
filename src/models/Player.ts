@@ -1,5 +1,7 @@
 import { Schema, model, Document } from 'mongoose';
+import { IEnemy } from '../interfaces/enemy';
 import { ItemSchema } from './Item';
+import { PlayerAttack } from '../commands/adventure-commands';
 
 interface IPlayer extends Document {
     id: string,
@@ -31,6 +33,7 @@ interface IPlayer extends Document {
     makeAdmin: Function,
     ban: Function,
     unban: Function,
+    attackEnemy: Function,
 }
 
 const PlayerSchema = new Schema({
@@ -240,7 +243,8 @@ PlayerSchema.methods.getMaxLevel = function () {
 };
 
 PlayerSchema.methods.getIdFromName = function (id: string) {
-    return id.replace(/[!@<>]/g, '');
+   id.replace(/[!@<>]/g, '');
+   return this.save();
 };
 
 PlayerSchema.methods.hasBeenBanned = function () {
@@ -301,6 +305,36 @@ PlayerSchema.methods.unban = function () {
     this.isBanned = false;
 
     return this.save();
+};
+
+PlayerSchema.methods.attackEnemy = function (enemy: IEnemy, action: String) {
+    const player = this.id;
+    const roll = Math.floor(Math.random() * 100);
+    const baseDamage = this.getStat('attack');
+    const baseInt = this.getStat('intelligence');
+    const attTotalDamage = ((baseDamage + roll) + this.rebirths);
+    const spellTotalDamage = ((baseInt + roll) + this.rebirths);
+
+    if(action === 'attack')
+    {
+    return <PlayerAttack> {
+        player: player,
+        roll: roll,
+        baseDamage: baseDamage,
+        critDamage: 10,
+        totalDamage: attTotalDamage,
+    };
+    }
+    if(action === 'spell')
+    {
+    return <PlayerAttack> {
+        player: player,
+        roll: roll,
+        baseDamage: baseInt,
+        critDamage: 10,
+        totalDamage: spellTotalDamage,
+    };
+    }      
 };
 
 const Player = model<IPlayer>('Player', PlayerSchema);

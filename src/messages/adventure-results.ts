@@ -1,11 +1,13 @@
 import { EmbedFieldData } from 'discord.js';
 import { MessageEmbed } from 'discord.js';
-
-const makeAdventureResults = (won: boolean) => {
+import { CurrentAdventure } from "../commands/adventure-commands"
+import { IEnemy } from "../interfaces/enemy"
+import { PlayerResult } from "../commands/adventure-commands"
+const makeAdventureResults = (won: boolean, enemy: IEnemy, absoluteDamge: number, allPlayerResults: PlayerResult[]) => {
     let color = 'DARK_GREEN';
 
     let desc = [
-        `The group killed the Ascended Cave Lion (1,267/892).`,
+        `The group killed the ${enemy.name} (${absoluteDamge}/${enemy.baseHp}).`,
         `TODO: Make this clever`,
     ];
 
@@ -13,23 +15,24 @@ const makeAdventureResults = (won: boolean) => {
         color = 'DARK_RED';
 
         desc = [
-            `The group got killed (167/892).`,
+            `The group got killed (${absoluteDamge}/${enemy.baseHp}).`,
             `TODO: Make this clever`,
         ];
     }
-
+    // \n💥 Bonus Damage: 301
     return new MessageEmbed()
         .setColor(color) // WIN/LOSE colours
         .setDescription(desc.join('\n'))
         .addFields([
             <EmbedFieldData>{
-                name: 'tmoze315',
-                value: `🎲 Rolled a 20\n⚔️ Damage: 400`,
+                name: `${allPlayerResults[0].player.username}`,
+                value: `🎲 Rolled a ${allPlayerResults[0].roll}\n⚔️ Damage: ${allPlayerResults[0].baseDamage}\n Total Damage:${allPlayerResults[0].totalDamage}`,
                 inline: true,
             },
+            // Bonus Damage Not Added Yet
             <EmbedFieldData>{
-                name: 'YoItsBK',
-                value: `🎲 Rolled a 20\n⚔️ Damage: 400\n💥 Bonus Damage: 301`,
+                name: `${allPlayerResults[1].player.username}`,
+                value: `🎲 Rolled a ${allPlayerResults[1].roll}\n⚔️ Damage: ${allPlayerResults[1].baseDamage}\n Total Damage:${allPlayerResults[1].totalDamage}`,
                 inline: true,
             },
         ]);

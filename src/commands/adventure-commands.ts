@@ -17,6 +17,32 @@ import { makeErrorMessage } from "../messages/error";
 import { makeSuccessMessage } from "../messages/success";
 import { makeLockedMessage } from "../messages/locked";
 import { makeCannotSummonBossMessage } from "../messages/cannot-summon-boss";
+import { IPlayer, Player } from "../models/Player"
+import { AdventureResult } from "../models/AdventureResult"
+import { promises } from "fs";
+import { id } from "date-fns/locale";
+
+
+interface CurrentAdventure {
+    reactions: Collection<String, MessageReaction> | null,
+    enemy: IEnemy,
+}
+
+interface PlayerResult {
+    player: IPlayer,
+    action: string,
+    roll: number,
+    baseDamage: number,
+    totalDamage: number,
+
+    // Can add 'fumbled', 'crit' etc to this later
+}
+
+interface PlayerAttack {
+    roll: number,
+    baseDamage: number,
+    critDamage: number,
+}
 
 class AdventureCommands extends BaseCommands {
     async adventure() {
@@ -41,18 +67,18 @@ class AdventureCommands extends BaseCommands {
 
         await this.guild.lock();
 
-        const reactions = await this.startAdventure();
+        const adventure: CurrentAdventure | null = await this.startAdventure();
 
-        if (!reactions) {
-            return;
+        if (!adventure || !adventure.reactions) {
+        return;
         }
 
-        await this.handleEndOfAdventure(reactions);
+        await this.handleEndOfAdventure(adventure);
 
         this.guild.unlock();
     }
 
-    private async startAdventure(): Promise<Collection<String, MessageReaction> | null> {
+    private async startAdventure(): Promise<CurrentAdventure | null> {
         const area: IArea | null = this.guild.getCurrentArea();
 
         if (!area) {
@@ -63,11 +89,11 @@ class AdventureCommands extends BaseCommands {
         const enemy: IEnemy = area.getRandomEnemy();
 
         return this.awaitReactionsToBattle(enemy, area, () => {
-            return makeAdventureBattleMessage(area, enemy, this.message.author.username);
+        return makeAdventureBattleMessage(area, enemy, this.message.author.username);
         });
     }
 
-    private async awaitReactionsToBattle(enemy: IEnemy | IBoss, area: IArea, messageCallback: CallableFunction): Promise<Collection<String, MessageReaction> | null> {
+    private async awaitReactionsToBattle(enemy: IEnemy | IBoss, area: IArea, messageCallback: CallableFunction): Promise<CurrentAdventure | null> {
         const userReactions: Array<any> = [];
 
         const adventureEmojisFilter: CollectorFilter = async (reaction, user) => {
@@ -109,59 +135,132 @@ class AdventureCommands extends BaseCommands {
             }
         );
 
-        const durationInMiliseconds = duration * 60000;
-        // const durationInMiliseconds = 0.1 * 60000;
+        // const durationInMiliseconds = duration * 60000;
+        const durationInMiliseconds = 0.1 * 60000;
         const reactions = await message.awaitReactions(adventureEmojisFilter, { time: durationInMiliseconds });
 
         message.delete();
 
-        return reactions;
+        return <CurrentAdventure>{
+            reactions,
+            enemy
+        };
+        
     }
 
-    async handleEndOfAdventure(reactions: Collection<String, MessageReaction>) {
-        const attackingUsers: Array<User> = [];
-        const spellUsers: Array<User> = [];
+    async handleEndOfAdventure(adventure: CurrentAdventure) {
+        if (!adventure.reactions) {
+            return null;
+        }
+        const allPlayerResults: Array<PlayerResult> = [];
+ 
 
-        reactions.forEach((reaction: MessageReaction, emoji: String) => {
+        let count = 0;
+
+        var all = new Promise(resolve => {
+        adventure.reactions?.forEach(async (reaction: MessageReaction, emoji: String) => {
             const totalReactions = reaction?.count || 0;
-
+            
             // Ignore the bot's reaction
             if (totalReactions <= 1) {
                 return;
             }
-
+            
             const users = reaction.users.cache.filter((user: any): boolean => {
                 return !user.bot;
             }).array();
 
+            let action = 'attack';
+
             if ('⚔️' === emoji) {
-                attackingUsers.push(...users);
-            } else if ('✨' === emoji) {
-                spellUsers.push(...users);
+                action = 'attack';
+            } 
+
+            if ('✨' === emoji) {
+                action = 'spell';
+            } 
+            if ('🏃‍♂️' === emoji) {
+                action = 'run';
             }
+            
+            
+            const playerResults = await Promise.all(users.map(async (user : User) : Promise <PlayerResult> => {
+            const player: IPlayer | null = await Player.findOne({ id: user.id }).exec();
+
+            // Find the player somehow. Will look something like this...
+                const playerAttack : PlayerAttack = player?.attackEnemy(adventure.enemy, action);
+                      
+                return <PlayerResult>{
+                    player,
+                    action,
+                    roll: playerAttack.roll,
+                    baseDamage: playerAttack.baseDamage,
+                    critDamage: playerAttack.critDamage,
+                    totalDamage: playerAttack.baseDamage + playerAttack.critDamage + playerAttack.roll,
+                };
+
+            }));  
+        allPlayerResults.push(...playerResults);
+
+
+        count +=1;
+        if (count === totalReactions)
+        {
+            resolve();
+        }  
+
+
         });
+    });
+        await Promise.all([all]);  
+        console.log(allPlayerResults);
+        
 
         // TODO: Make sure we only count one reaction from each user
-
+        
         // GET BASE ATTACK
 
         // let damage = attackingUsers.
+        let absoluteDamage = 0;
 
-        // const result = new AdventureResult({
-        //     damage: Math.floor(Math.random() * 100),
-        //     totalParticipants: attackingUsers.length + spellUsers.length,
-        //     wasSuccessful: true,
+        for (let i = 0; i < allPlayerResults.length; i++) {
+            absoluteDamage += allPlayerResults[i].totalDamage; // prints values: 10, 20, 30, 40
+          }
+
+        let won = false;
+        const adventureResultsMessage = makeAdventureResults(won, adventure.enemy, absoluteDamage, allPlayerResults);
+
+        if(absoluteDamage >= adventure.enemy.baseHp)
+        {
+        this.message.channel.send(adventureResultsMessage);    
+        //const result = new AdventureResult({
+        //    damage: absoluteDamage,
+        //    totalParticipants: allPlayerResults.length,
+        //    wasSuccessful: true,
         // });
-        // 
-        // await result.save();
+        //await result.save();
+        } 
+         
 
+         if(absoluteDamage < adventure.enemy.baseHp)
+        {
+        this.message.channel.send(adventureResultsMessage);    
+        // const result = new AdventureResult({
+        //    damage: absoluteDamage,
+        //    totalParticipants: allPlayerResults.length,
+        //    wasSuccessful: false,
+        // });
+        //await result.save();
+        }
+        
+    
         // Did we actually win?
 
         // TODO make this work from Enemy
-        const won = Math.random() > 0.3;
 
-        const adventureResultsMessage = makeAdventureResults(won);
-        this.message.channel.send(adventureResultsMessage);
+
+
+      //  this.message.channel.send(adventureResultsMessage);
 
         const isMiniBoss = true;
 
@@ -184,7 +283,8 @@ class AdventureCommands extends BaseCommands {
         // TODO: End battle (update data in Guild model)
 
         // TODO: Handle rewards & losses
-    }
+        
+}
 
     async summonAreaBoss() {
         const area: IArea | null = this.guild.getCurrentArea();
@@ -333,4 +433,4 @@ class AdventureCommands extends BaseCommands {
     }
 }
 
-export { AdventureCommands };
+export { AdventureCommands, PlayerAttack, CurrentAdventure, PlayerResult };
