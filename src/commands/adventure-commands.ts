@@ -21,11 +21,13 @@ import { IPlayer, Player } from "../models/Player"
 import { AdventureResult } from "../models/AdventureResult"
 import { promises } from "fs";
 import { id } from "date-fns/locale";
+import { stringify } from "querystring";
 
 
 interface CurrentAdventure {
     reactions: Collection<String, MessageReaction> | null,
     enemy: IEnemy,
+    durationInMiliseconds: number
 }
 
 interface PlayerResult {
@@ -33,6 +35,7 @@ interface PlayerResult {
     action: string,
     roll: number,
     baseDamage: number,
+    critDamage: number,
     totalDamage: number,
 
     // Can add 'fumbled', 'crit' etc to this later
@@ -95,16 +98,33 @@ class AdventureCommands extends BaseCommands {
 
     private async awaitReactionsToBattle(enemy: IEnemy | IBoss, area: IArea, messageCallback: CallableFunction): Promise<CurrentAdventure | null> {
         const userReactions: Array<any> = [];
-
+        
         const adventureEmojisFilter: CollectorFilter = async (reaction, user) => {
+          
             if (user.bot) {
                 return true;
             }
+            let idNoSymbols = user.id.replace(/[!@<>]/g, '');
 
+            const player: IPlayer | null = await Player.findOne({ id: idNoSymbols }).exec();
+            
+            
             const usersLastReaction = userReactions[user.id];
-
+            
+            
             if (usersLastReaction) {
                 await usersLastReaction.users.remove(user.id);
+            }
+    
+
+            if (!player) {
+                await reaction.users.remove(idNoSymbols);
+                let thisUser = user;
+                 console.log(user);
+  
+                thisUser.send(`Whoops! It doesn't look like you've started your adventure yet. Use -start to begin!`);
+                
+                
             }
 
             userReactions[user.id] = reaction;
@@ -135,15 +155,16 @@ class AdventureCommands extends BaseCommands {
             }
         );
 
-        // const durationInMiliseconds = duration * 60000;
-        const durationInMiliseconds = 0.1 * 60000;
+         const durationInMiliseconds = duration * 60000;
+        // const durationInMiliseconds = 0.1 * 60000;
         const reactions = await message.awaitReactions(adventureEmojisFilter, { time: durationInMiliseconds });
 
         message.delete();
 
         return <CurrentAdventure>{
             reactions,
-            enemy
+            enemy,
+            durationInMiliseconds
         };
         
     }
@@ -196,15 +217,17 @@ class AdventureCommands extends BaseCommands {
                     roll: playerAttack.roll,
                     baseDamage: playerAttack.baseDamage,
                     critDamage: playerAttack.critDamage,
-                    totalDamage: playerAttack.baseDamage + playerAttack.critDamage + playerAttack.roll,
+                    totalDamage: playerAttack.baseDamage + playerAttack.roll,
                 };
-
+                
             }));  
         allPlayerResults.push(...playerResults);
+        //console.log(allPlayerResults);    
 
-
-        count +=1;
-        if (count === totalReactions)
+        count = (count + 1);
+        console.log(count);
+        console.log(totalReactions);
+        if (count === (totalReactions))
         {
             resolve();
         }  
@@ -221,30 +244,45 @@ class AdventureCommands extends BaseCommands {
         // GET BASE ATTACK
 
         // let damage = attackingUsers.
+        
         let absoluteDamage = 0;
 
         for (let i = 0; i < allPlayerResults.length; i++) {
-            absoluteDamage += allPlayerResults[i].totalDamage; // prints values: 10, 20, 30, 40
+            absoluteDamage += allPlayerResults[i].totalDamage; 
           }
 
         let won = false;
-        const adventureResultsMessage = makeAdventureResults(won, adventure.enemy, absoluteDamage, allPlayerResults);
+        
+
+        const reactions = await { time: adventure.durationInMiliseconds };
 
         if(absoluteDamage >= adventure.enemy.baseHp)
         {
-        this.message.channel.send(adventureResultsMessage);    
+        won = true;    
+        const adventureResultsMessageWin = makeAdventureResults(won, adventure.enemy, absoluteDamage, allPlayerResults);
+        this.message.channel.send(adventureResultsMessageWin);
+        
+        for (let i = 0; i < allPlayerResults.length; i++) {
+
+            const thisPlayer: IPlayer = allPlayerResults[i].player;
+            // console.log(thisPlayer);
+
+            thisPlayer.postBattleXp(thisPlayer, adventure.enemy); 
+        }
         //const result = new AdventureResult({
         //    damage: absoluteDamage,
         //    totalParticipants: allPlayerResults.length,
         //    wasSuccessful: true,
-        // });
+        //});
         //await result.save();
         } 
          
 
-         if(absoluteDamage < adventure.enemy.baseHp)
+        if(absoluteDamage < adventure.enemy.baseHp)
         {
-        this.message.channel.send(adventureResultsMessage);    
+        won = false;
+        const adventureResultsMessageLose = makeAdventureResults(won, adventure.enemy, absoluteDamage, allPlayerResults);    
+        this.message.channel.send(adventureResultsMessageLose);    
         // const result = new AdventureResult({
         //    damage: absoluteDamage,
         //    totalParticipants: allPlayerResults.length,
@@ -253,15 +291,6 @@ class AdventureCommands extends BaseCommands {
         //await result.save();
         }
         
-    
-        // Did we actually win?
-
-        // TODO make this work from Enemy
-
-
-
-      //  this.message.channel.send(adventureResultsMessage);
-
         const isMiniBoss = true;
 
         if (won && isMiniBoss) {

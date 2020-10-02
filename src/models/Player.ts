@@ -2,6 +2,8 @@ import { Schema, model, Document } from 'mongoose';
 import { IEnemy } from '../interfaces/enemy';
 import { ItemSchema } from './Item';
 import { PlayerAttack } from '../commands/adventure-commands';
+import { makeRebirthSuccessMessage } from '../messages/rebirth-success';
+import { makeRebirthFailureMessage } from '../messages/rebirth-failure';
 
 interface IPlayer extends Document {
     id: string,
@@ -11,7 +13,10 @@ interface IPlayer extends Document {
     class: string,
     background: string,
     experience: number,
+    nextLevelExperience: number,
+    maxLevelExperience: number,
     level: number,
+    maxLevel: number,
     rebirths: number,
     currency: number,
     getLevel: Function,
@@ -34,6 +39,10 @@ interface IPlayer extends Document {
     ban: Function,
     unban: Function,
     attackEnemy: Function,
+    getCritAmount: Function,
+    handleExperience: Function,
+    postBattleXp: Function,
+    rebirth: Function,
 }
 
 const PlayerSchema = new Schema({
@@ -73,9 +82,24 @@ const PlayerSchema = new Schema({
         default: 0,
         min: 0,
     },
+    nextLevelExperience: {
+        type: Number,
+        default: 11,
+        min: 11,
+    },
+    maxLevelExperience: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
     level: {
         type: Number,
         default: 1,
+        min: 0,
+    },
+    maxLevel: {
+        type: Number,
+        default: 10,
         min: 0,
     },
     rebirths: {
@@ -243,8 +267,8 @@ PlayerSchema.methods.getMaxLevel = function () {
 };
 
 PlayerSchema.methods.getIdFromName = function (id: string) {
-   id.replace(/[!@<>]/g, '');
-   return this.save();
+   const newId = id.replace(/[!@<>]/g, '');
+   return newId;
 };
 
 PlayerSchema.methods.hasBeenBanned = function () {
@@ -309,14 +333,14 @@ PlayerSchema.methods.unban = function () {
 
 PlayerSchema.methods.attackEnemy = function (enemy: IEnemy, action: String) {
     const player = this.id;
-    const roll = Math.floor(Math.random() * 100);
+    const roll = Math.floor(Math.random() * 50);
     const baseDamage = this.getStat('attack');
     const baseInt = this.getStat('intelligence');
     const attTotalDamage = ((baseDamage + roll) + this.rebirths);
     const spellTotalDamage = ((baseInt + roll) + this.rebirths);
 
     if(action === 'attack')
-    {
+    { 
     return <PlayerAttack> {
         player: player,
         roll: roll,
@@ -334,8 +358,79 @@ PlayerSchema.methods.attackEnemy = function (enemy: IEnemy, action: String) {
         critDamage: 10,
         totalDamage: spellTotalDamage,
     };
-    }      
-};
+    }
+}
+    
+    PlayerSchema.methods.postBattleXp = function (player: IPlayer, enemy: IEnemy,) {
+        let newXp = (this.experience + enemy.baseXp);
+        player.experience = newXp;
+        this.checkExperience(newXp);
+
+        return;
+    };
+
+    PlayerSchema.methods.checkExperience = async function (newXp: number) {
+
+    let newExperience = newXp;
+    this.experience = newExperience;
+
+        // If the player levels up
+        if (newExperience >= this.nextLevelExperience)
+        {
+            let newLevel = (this.level + 1);
+
+            let newLevelAfterCheck = await this.checkLevelUp(newLevel);
+
+            this.level = newLevelAfterCheck;
+            let newNextLevelXp = Math.round(Math.pow((newLevelAfterCheck + 1), 3.5));
+            
+            this.nextLevelExperience = newNextLevelXp;
+            this.checkExperience(newExperience);
+        }
+
+        else(newExperience < this.nextLevelExperience)
+        {
+            this.experience = newExperience;
+        }
+
+        return this.save();
+    };
+
+    PlayerSchema.methods.checkLevelUp = async function (newLevel: number) {
+
+        let newLevelAfterCheck = new Number;
+
+        if (newLevel >= this.maxLevel)
+        {
+            newLevelAfterCheck = this.maxLevel;
+        }
+        else
+        {
+            newLevelAfterCheck = newLevel;
+        }
+    
+        return newLevelAfterCheck;
+    };
+
+    PlayerSchema.methods.rebirth = async function () {
+
+        let able = false;
+        if (this.level >= this.maxLevel)
+        {
+            this.maxLevel = this.maxLevel + 10;
+            this.level = 0;
+            this.rebirths = (this.rebirths + 1);
+            able = true;
+            return able;
+        }
+        else
+        {   
+            able = false;
+            return able;
+        }
+    };
+
+
 
 const Player = model<IPlayer>('Player', PlayerSchema);
 

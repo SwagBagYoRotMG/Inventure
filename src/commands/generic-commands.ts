@@ -6,6 +6,8 @@ import { makeInsufficientFundsClassNotSelectedMessage } from "../messages/insuff
 import { makeInvalidHeroclassMessage } from "../messages/invalid-heroclass";
 import { makeStandardMessage } from "../messages/standard-message";
 import { makeStartMessage } from "../messages/start-message";
+import { makeRebirthSuccessMessage } from "../messages/rebirth-success";
+import { makeRebirthFailureMessage } from "../messages/rebirth-failure";
 import { makeStatsMessage } from "../messages/stats";
 import { Player, IPlayer } from '../models/Player';
 import BaseCommands from "./base-commands";
@@ -33,6 +35,29 @@ class GenericCommands extends BaseCommands {
         newPlayer.save();
 
         this.message.channel.send(makeStartMessage(newPlayer.get('username')));
+    }
+
+    async rebirth() {
+        let targetPlayerId = this.message.author.id;
+        const player: IPlayer | null = await Player.findOne({ id: targetPlayerId }).exec();
+        console.log(player);
+
+        if (!player){
+            this.message.channel.send('Player not found. Please try again');
+            return;
+        }
+        const able = await player.rebirth(targetPlayerId);
+
+        if(able === true)
+        {
+            this.message.channel.send(makeRebirthSuccessMessage(player.username,player.maxLevel));
+            return;
+        }
+        else
+        {
+            this.message.channel.send(makeRebirthFailureMessage(player.username,player.maxLevel));
+        }
+        
     }
 
     async stats(playerId?: string) {

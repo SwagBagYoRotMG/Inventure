@@ -15,27 +15,43 @@ const makeAdventureResults = (won: boolean, enemy: IEnemy, absoluteDamge: number
         color = 'DARK_RED';
 
         desc = [
-            `The group got killed (${absoluteDamge}/${enemy.baseHp}).`,
+            `The group got killed by the ${enemy.name} (${absoluteDamge}/${enemy.baseHp}).`,
             `TODO: Make this clever`,
         ];
     }
+     
     // \n💥 Bonus Damage: 301
-    return new MessageEmbed()
+    let embed = new MessageEmbed()
         .setColor(color) // WIN/LOSE colours
         .setDescription(desc.join('\n'))
-        .addFields([
+        for (let i = 0; i < allPlayerResults.length; i++) {
+        
+        let emoji = new String;
+ 
+        if (allPlayerResults[i].action === 'attack')    
+        {
+            emoji = '⚔️';
+        }
+        if (allPlayerResults[i].action === 'spell')    
+        {
+            emoji = '✨';
+        }
+        if (allPlayerResults[i].action === 'run')    
+        {
+            emoji = '🏃‍♂️';
+        }
+
+        embed.addFields(
             <EmbedFieldData>{
-                name: `${allPlayerResults[0].player.username}`,
-                value: `🎲 Rolled a ${allPlayerResults[0].roll}\n⚔️ Damage: ${allPlayerResults[0].baseDamage}\n Total Damage:${allPlayerResults[0].totalDamage}`,
-                inline: true,
+                name: `${allPlayerResults[i].player.username}`,
+                value: `🎲 (${allPlayerResults[i].roll}) + ${emoji} (${allPlayerResults[i].baseDamage}) = 💥 (${allPlayerResults[i].totalDamage})`,
+                inline: false,
             },
             // Bonus Damage Not Added Yet
-            <EmbedFieldData>{
-                name: `${allPlayerResults[1].player.username}`,
-                value: `🎲 Rolled a ${allPlayerResults[1].roll}\n⚔️ Damage: ${allPlayerResults[1].baseDamage}\n Total Damage:${allPlayerResults[1].totalDamage}`,
-                inline: true,
-            },
-        ]);
+        )
+
+    }
+        return embed;
 }
 
 export { makeAdventureResults };
