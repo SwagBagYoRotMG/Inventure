@@ -43,6 +43,7 @@ interface IPlayer extends Document {
     handleExperience: Function,
     postBattleXp: Function,
     rebirth: Function,
+    removeCurrency: Function,
 }
 
 const PlayerSchema = new Schema({
@@ -229,15 +230,18 @@ PlayerSchema.methods.getHeroClass = function (): string {
     return this.get('class') || 'Hero';
 };
 
-PlayerSchema.methods.setHeroClass = function (heroClass: string): string {
+PlayerSchema.methods.setHeroClass = function (heroClass: string){
     heroClass = heroClass.toLowerCase();
-    heroClass = heroClass.charAt(0).toUpperCase() + heroClass.slice(1).trim();
+    const newHeroClass = heroClass.charAt(0).toUpperCase() + heroClass.slice(1).trim();
+    const options: Array<String> = ['Berserker', 'Wizard', 'Ranger', 'Cleric', 'Tinkerer'];
 
-    if (heroClass in ['Berserker', 'Wizard', 'Ranger', 'Cleric', 'Tinkerer']) {
-        throw new Error('Unsupported hero class');
+    if (options.includes(newHeroClass)) {
+        this.class = newHeroClass;
+        return true;
     }
-
-    this.heroClass = heroClass;
+    else{
+        return false;
+    }
 
     return this.save();
 };
@@ -251,7 +255,40 @@ PlayerSchema.methods.getSkillpoint = function (skillpoint: string) {
 };
 
 PlayerSchema.methods.getHeroClassDescription = function () {
-    return 'TODO: Berserkers have the option to rage and add big bonuses to attacks, but fumbles hurt. Use the rage command when attacking in an adventure.';
+
+    if(!this.class)
+    {
+    return 'All heroes are destined for greatness, your journey begins now. When you reach level 10 you can choose your path and select a heroclass.';
+    }
+
+    if(this.class === 'Berserker')
+    {
+    return 'Berserkers have the option to rage and add big bonuses to attacks, but fumbles hurt. Use the rage command when attacking in an adventure.';
+    }
+
+    if(this.class === 'Wizard')
+    {
+    return `Wizards have the option to focus and add large bonuses to their magic, but their focus can sometimes go astray...
+    Use the focus command when attacking in an adventure.`;
+    }
+
+    if(this.class === 'Ranger')
+    {
+    return `Rangers can gain a special pet, which can find items and give reward bonuses.
+    Use the pet command to see pet options.`;
+    }
+
+    if(this.class === 'Tinkerer')
+    {
+    return `Tinkerers can forge two different items into a device bound to their very soul.
+    Use the forge command.`;
+    }
+
+    if(this.class === 'Cleric')
+    {
+    return `Clerics can bless the entire group when praying.
+    Use the bless command when fighting in an adventure.`;
+    }
 };
 
 PlayerSchema.methods.getHeroClassThumbnail = function () {
@@ -308,7 +345,17 @@ PlayerSchema.methods.addCurrency = function (amount: number) {
         amount = parseInt(amount);
     }
 
-    this.currency += amount;
+    this.currency = (this.currency + amount);
+
+    return this.save();
+};
+
+PlayerSchema.methods.removeCurrency = function (amount: number) {
+    if (typeof amount === 'string') {
+        amount = parseInt(amount);
+    }
+
+    this.currency -= amount;
 
     return this.save();
 };

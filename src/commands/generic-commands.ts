@@ -11,6 +11,7 @@ import { makeRebirthFailureMessage } from "../messages/rebirth-failure";
 import { makeStatsMessage } from "../messages/stats";
 import { Player, IPlayer } from '../models/Player';
 import BaseCommands from "./base-commands";
+import { makeShowHeroclassesMessage } from "../messages/show-heroclasses";
 
 class GenericCommands extends BaseCommands {
     // stats([first, last]: [string?, string?]) {
@@ -78,7 +79,7 @@ class GenericCommands extends BaseCommands {
     }
 
     // Lets players select their Heroclass
-    async selectHeroclass(heroclass: string) {
+    async selectHeroclass(heroclass?: string) {
         if (this.guild.isLocked) {
             this.message.channel.send(makeErrorMessage(`You cannot do that right now.`));
             return;
@@ -91,9 +92,14 @@ class GenericCommands extends BaseCommands {
             return;
         }
 
+        if(!heroclass)
+        {
+            this.message.channel.send(makeShowHeroclassesMessage(player.get('username')));
+            return;
+        }
+
         if (player.get('level') < 10 && player.get('rebirths') < 2) {
             this.message.channel.send(makeClassNotSelectedMessage(player.get('username')));
-
             return;
         }
 
@@ -106,9 +112,17 @@ class GenericCommands extends BaseCommands {
         }
 
         try {
-            await player.setHeroClass(heroclass);
+            const able = await player.setHeroClass(heroclass);
+            
+            if (able === true){
+                await player.removeCurrency(costToChangeHeroClass);
+                this.message.channel.send(makeClassSelectedMessage(player.get('username'), player.get('class')));
+            }
+            if (able === false){
+                this.message.channel.send(makeInvalidHeroclassMessage(player.get('username')));
+            }
 
-            this.message.channel.send(makeClassSelectedMessage(player.get('username'), player.get('class')));
+            
         } catch (exception) {
             this.message.channel.send(makeInvalidHeroclassMessage(player.get('username')));
         }
