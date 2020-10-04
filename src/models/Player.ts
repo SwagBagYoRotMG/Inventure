@@ -3,6 +3,7 @@ import { IEnemy } from '../interfaces/enemy';
 import { ItemSchema } from './Item';
 import { PlayerAttack } from '../commands/adventure-commands';
 import { IArea } from '../areas/base-area';
+import { makeEarnedSkillpoints } from '../messages/earned-skillpoints-and-levelup';
 
 interface IPlayer extends Document {
     id: string,
@@ -46,6 +47,8 @@ interface IPlayer extends Document {
     getExperienceNeededForLevel: Function,
     getLevelForCurrentExperience: Function,
     postBattleRewards: Function,
+    handleSkillpointRewards: Function,
+    useSkillpoints: Function,
 }
 
 interface RewardResult {
@@ -58,6 +61,19 @@ interface RewardResult {
     baseXp: number,
     totalGold: number,
     totalXp: number,
+}
+
+interface EarnedSkillpoints {
+    player: IPlayer,
+    level: number,
+    totalSkillpoints: number,
+}
+
+interface SkillpointResults{
+    player: IPlayer,
+    finalPoints: number,
+    skill: string,
+    worked: boolean,
 }
 
 const PlayerSchema = new Schema({
@@ -471,7 +487,7 @@ PlayerSchema.methods.getLevelForCurrentExperience = function (enemy: IEnemy, are
 PlayerSchema.methods.handleLevelUp = async function () {
     const levelForCurrentExperience = this.getLevelForCurrentExperience();
     let newLevel = levelForCurrentExperience;
-
+ 
     if (levelForCurrentExperience > this.maxLevel) {
         this.experience = this.getExperienceNeededForLevel(this.maxLevel);
 
@@ -480,8 +496,42 @@ PlayerSchema.methods.handleLevelUp = async function () {
 
     this.level = newLevel;
 
-    return this.save();
+//    const save = this.save();
+
+    return newLevel;
 };
+
+PlayerSchema.methods.handleSkillpointRewards = async function (startLevel: number, endLevel: number, player: IPlayer) {
+    
+    let allPassedLevels = [];
+    let sumEven = 0;
+
+    const newId = player.id.replace(/[!@<>]/g, '');
+    
+    for (let i = startLevel + 1; i <= endLevel; i++) {
+    allPassedLevels.push(i);
+    }
+
+    if(allPassedLevels.length > 0){
+    for (let i = 0; i <= allPassedLevels.length; i++) {
+        if (allPassedLevels[i] % 2 === 0) {
+          sumEven++;
+        }
+    }
+}
+const currentPoints = this.get(`skillpoints.unspent`);
+const newPoints = this.set(`skillpoints.unspent`, (sumEven + Number(currentPoints)));
+
+const save = this.save();
+
+    console.log(allPassedLevels);
+    return <EarnedSkillpoints>{
+        player: this,
+        level: endLevel,
+        totalSkillpoints: sumEven,
+        }
+};
+
 
 PlayerSchema.methods.rebirth = async function () {
     if (this.level < this.maxLevel) {
@@ -547,6 +597,66 @@ PlayerSchema.methods.postBattleRewards = function (player: IPlayer, enemy: IEnem
     };
 };
 
+PlayerSchema.methods.useSkillpoints = async function (desiredSkill: string, amount?: number) {
+    
+    let realAmount = 0;
+    let skill = desiredSkill.toLowerCase();
+    let worked = false;
+
+    const options: Array<String> = ['attack', 'charisma', 'intelligence', 'dexterity', 'luck','att', 'cha', 'int', 'dex', 'lck'];
+
+    if (!options.includes(skill)) {
+        worked = false;
+        return;
+    }
+
+    if(skill == 'att'){
+        skill = 'attack';
+    }
+    if(skill == 'cha'){
+        skill = 'charisma';
+    }
+    if(skill == 'int'){
+        skill = 'intelligence';
+    }
+    if(skill == 'dex'){
+        skill = 'dexterity';
+    }
+    if(skill == 'lck'){
+        skill = 'luck';
+    }
+
+    if(!amount){
+        realAmount = 1;
+    }
+    if(amount){
+        realAmount = amount;
+    }
+
+    
+    const currentPoints = this.get(`skillpoints.unspent`);
+
+    if(currentPoints >= realAmount){
+        const currentPointsInSkill = this.get(`skillpoints.${skill}`);
+        const newPointsInSkill = this.set(`skillpoints.${skill}`, (Number(currentPointsInSkill) + Number(realAmount)));
+        const removeUnspent = this.set(`skillpoints.unspent`, (Number(currentPoints) - Number(realAmount)));
+        worked = true;
+
+    }
+    else{
+        worked = false;
+    }
+    const finalPointsInSkill = await this.get(`skillpoints.${skill}`);
+    const save = await this.save();
+
+    return <SkillpointResults>{
+        player: this,
+        finalPoints: finalPointsInSkill,
+        skill,
+        worked,
+    }
+};
+
 const Player = model<IPlayer>('Player', PlayerSchema);
 
-export { Player, PlayerSchema, IPlayer, RewardResult };
+export { Player, PlayerSchema, IPlayer, RewardResult, EarnedSkillpoints, SkillpointResults };
