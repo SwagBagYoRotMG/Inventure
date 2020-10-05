@@ -15,21 +15,28 @@ const makeEarnedSkillpoints = (allSkillpointRewards: EarnedSkillpoints[]) => {
 
     // \n💥 Bonus Damage: 301
     let embed = new MessageEmbed()
-        .setTitle(`Congratulations on achieving a new level, here are your skillpoints!`)
         .setColor('DARK_GREEN') // WIN/LOSE colours
-        .setDescription(desc.join('\n'))
     for (let i = 0; i < allSkillpointRewards.length; i++) {
+        
         
         let end = 's!';
 
         if (allSkillpointRewards[i].totalSkillpoints === 1){
             end = '!';         
         }
+        
+        let fieldValue = `, and you've earned **${allSkillpointRewards[i].totalSkillpoints}** Skillpoint${end}`
+
+
+        if(allSkillpointRewards[i].totalSkillpoints === 0){
+            fieldValue = `!`
+        }
+
         console.log(allSkillpointRewards[i].totalSkillpoints);
         embed.addFields(
             <EmbedFieldData>{
                 name: `${allSkillpointRewards[i].player.username}`,
-                value: `🌟 Your new level is **${allSkillpointRewards[i].level}**, and you've earned **${allSkillpointRewards[i].totalSkillpoints}** Skillpoint${end}`,
+                value: `⏫🌟 Your new level is **${allSkillpointRewards[i].level}**${fieldValue}`,
                 inline: false,
             },
             // Bonus Damage Not Added Yet

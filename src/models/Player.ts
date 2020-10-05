@@ -67,6 +67,7 @@ interface EarnedSkillpoints {
     player: IPlayer,
     level: number,
     totalSkillpoints: number,
+    levelUp: boolean,
 }
 
 interface SkillpointResults{
@@ -418,28 +419,35 @@ PlayerSchema.methods.unban = function () {
     return this.save();
 };
 
-PlayerSchema.methods.attackEnemy = function (enemy: IEnemy, action: String) {
+PlayerSchema.methods.attackEnemy = function (enemy: IEnemy, action: String, area: IArea) {
     let roll = Math.floor(Math.random() * 50);
+
+    const goldLoss = Math.round(enemy.baseHp * enemy.goldMultiplier * area.goldMultiplier * 0.3);
 
     if (roll === 0) {
         roll = 1;
     }
 
     if (action === 'attack') {
-        const damage = ((this.getStat('attack') + roll) + this.rebirths);
-        const baseDamage = this.getStat('attack');
+        const attSkillPoints = this.get(`skillpoints.attack`);
+
+        const damage = ((this.getStat('attack') + roll + attSkillPoints) + this.rebirths);
+        const baseDamage = (this.getStat('attack') + attSkillPoints);
 
         return <PlayerAttack>{
             player: this,
             roll: roll,
             baseDamage: baseDamage,
             critDamage: 10,
-            totalDamage: damage
+            totalDamage: damage,
+            goldLoss,
         };
     }
     if (action === 'spell') {
-        const damage = ((this.getStat('intelligence') + roll) + this.rebirths);
-        const baseDamage = this.getStat('intelligence');
+        const intSkillPoints = this.get(`skillpoints.intelligence`);
+
+        const damage = ((this.getStat('intelligence') + roll + intSkillPoints) + this.rebirths);
+        const baseDamage = (this.getStat('intelligence') + intSkillPoints);
 
         return <PlayerAttack>{
             player: this.toObject(),
@@ -447,6 +455,7 @@ PlayerSchema.methods.attackEnemy = function (enemy: IEnemy, action: String) {
             baseDamage: baseDamage,
             critDamage: 10,
             totalDamage: damage,
+            goldLoss,
         };
     }
 }
@@ -505,9 +514,8 @@ PlayerSchema.methods.handleSkillpointRewards = async function (startLevel: numbe
     
     let allPassedLevels = [];
     let sumEven = 0;
+    let levelUp = false;
 
-    const newId = player.id.replace(/[!@<>]/g, '');
-    
     for (let i = startLevel + 1; i <= endLevel; i++) {
     allPassedLevels.push(i);
     }
@@ -522,6 +530,13 @@ PlayerSchema.methods.handleSkillpointRewards = async function (startLevel: numbe
 const currentPoints = this.get(`skillpoints.unspent`);
 const newPoints = this.set(`skillpoints.unspent`, (sumEven + Number(currentPoints)));
 
+    if(startLevel < endLevel)
+    {
+        levelUp = true;
+    }
+    else{
+        levelUp = false;
+    }
 const save = this.save();
 
     console.log(allPassedLevels);
@@ -529,6 +544,7 @@ const save = this.save();
         player: this,
         level: endLevel,
         totalSkillpoints: sumEven,
+        levelUp: levelUp,
         }
 };
 
@@ -555,7 +571,7 @@ PlayerSchema.methods.postBattleRewards = function (player: IPlayer, enemy: IEnem
     let bonusXpPercentage = 0;
     const baseGold = Math.round((enemy.baseHp * 10)) * enemy.goldMultiplier * area.goldMultiplier;
     const baseXp =  Math.round(enemy.baseHp * enemy.xpMultiplier * area.xpMultiplier);
-    
+
     if (goldRoll >= 20){
         bonusGoldPercentage = 1.2;
     }
@@ -603,7 +619,7 @@ PlayerSchema.methods.useSkillpoints = async function (desiredSkill: string, amou
     let skill = desiredSkill.toLowerCase();
     let worked = false;
 
-    const options: Array<String> = ['attack', 'charisma', 'intelligence', 'dexterity', 'luck','att', 'cha', 'int', 'dex', 'lck'];
+    const options: Array<String> = ['attack', 'charisma', 'intelligence', 'att', 'cha', 'int'];
 
     if (!options.includes(skill)) {
         worked = false;
@@ -618,12 +634,6 @@ PlayerSchema.methods.useSkillpoints = async function (desiredSkill: string, amou
     }
     if(skill == 'int'){
         skill = 'intelligence';
-    }
-    if(skill == 'dex'){
-        skill = 'dexterity';
-    }
-    if(skill == 'lck'){
-        skill = 'luck';
     }
 
     if(!amount){
