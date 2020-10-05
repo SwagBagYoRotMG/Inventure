@@ -554,6 +554,14 @@ PlayerSchema.methods.rebirth = async function () {
         throw new Error('Cannot rebirth');
     }
 
+    const options: Array<String> = ['attack', 'charisma', 'intelligence','unspent'];
+    
+
+    for (let i = 0; i <= options.length; i++) {
+        const currentPointsInSkill = this.get(`skillpoints.${options[i]}`);
+        const newPointsInSkill = this.set(`skillpoints.${options[i]}`, 0 );
+    }
+
     this.experience = 1;
     this.level = 1;
 
