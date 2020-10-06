@@ -1,9 +1,11 @@
 import { Schema, model, Document } from 'mongoose';
 import { IEnemy } from '../interfaces/enemy';
-import { ItemSchema } from './Item';
+import { Item, ItemSchema } from './Item';
 import { PlayerAttack } from '../commands/adventure-commands';
 import { IArea } from '../areas/base-area';
 import { makeEarnedSkillpoints } from '../messages/earned-skillpoints-and-levelup';
+import { IItem } from '../models/Item'
+import { isIterationStatement } from 'typescript';
 
 interface IPlayer extends Document {
     id: string,
@@ -49,6 +51,8 @@ interface IPlayer extends Document {
     postBattleRewards: Function,
     handleSkillpointRewards: Function,
     useSkillpoints: Function,
+    makeItem: Function,
+    clearBag: Function,
 }
 
 interface RewardResult {
@@ -571,6 +575,23 @@ PlayerSchema.methods.rebirth = async function () {
     return this.save();
 };
 
+PlayerSchema.methods.makeItem = function ()
+{
+    const item: IItem = new Item;
+
+    const thisItem = item.makeItem();
+
+    if (thisItem.attack){
+
+    }
+
+    this.backpack.push(thisItem);
+    console.log(this.backpack);
+
+    return this.save();
+}
+
+
 PlayerSchema.methods.postBattleRewards = function (player: IPlayer, enemy: IEnemy, area: IArea) {
 
     const goldRoll = Math.floor(Math.random() * 50);
@@ -673,6 +694,13 @@ PlayerSchema.methods.useSkillpoints = async function (desiredSkill: string, amou
         skill,
         worked,
     }
+};
+
+PlayerSchema.methods.clearBag = async function () {
+
+    this.backpack = [];
+
+    return this.save();
 };
 
 const Player = model<IPlayer>('Player', PlayerSchema);

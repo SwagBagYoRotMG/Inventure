@@ -14,6 +14,7 @@ import BaseCommands from "./base-commands";
 import { makeShowHeroclassesMessage } from "../messages/show-heroclasses";
 import { makeInsufficientSkillpointsMessage } from "../messages/insufficient-skillpoints";
 import { makeUsedSkillpointsMessage } from "../messages/used-skillpoints";
+import { IItem } from "../models/Item";
 
 class GenericCommands extends BaseCommands {
     // stats([first, last]: [string?, string?]) {
@@ -38,6 +39,15 @@ class GenericCommands extends BaseCommands {
         newPlayer.save();
 
         this.message.channel.send(makeStartMessage(newPlayer.get('username')));
+    }
+
+    async generateLoot() {
+        const player: IPlayer | null = await Player.findOne({ id: this.user.id }).exec();
+
+        const makeItem = await player?.makeItem();
+        //console.log(makeItem);
+        return;
+
     }
 
     async rebirth() {
