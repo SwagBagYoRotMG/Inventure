@@ -293,6 +293,20 @@ class AdminCommands extends BaseCommands {
         this.message.channel.send(makeUnbannedMessage(targetPlayer.get('username')));
     }
 
+    async generateLoot() {
+        const player: IPlayer | null = await Player.findOne({ id: this.user.id }).exec();
+
+        if (!await this.isAdmin()) {
+            this.message.channel.send(makeNotAdminMessage(this.message.author.username));
+            return;
+        }
+
+        const makeItem = await player?.makeItem();
+        //console.log(makeItem);
+        return;
+
+    }
+
 }
 
 export { AdminCommands };

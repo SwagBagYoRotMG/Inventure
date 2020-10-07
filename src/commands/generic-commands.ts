@@ -14,7 +14,9 @@ import BaseCommands from "./base-commands";
 import { makeShowHeroclassesMessage } from "../messages/show-heroclasses";
 import { makeInsufficientSkillpointsMessage } from "../messages/insufficient-skillpoints";
 import { makeUsedSkillpointsMessage } from "../messages/used-skillpoints";
+import { makeAvailableLootMessage } from "../messages/available-loot";
 import { IItem } from "../models/Item";
+import { makeChestsOpenedResultsMessage } from "../messages/chests-opened-results";
 
 class GenericCommands extends BaseCommands {
     // stats([first, last]: [string?, string?]) {
@@ -39,15 +41,6 @@ class GenericCommands extends BaseCommands {
         newPlayer.save();
 
         this.message.channel.send(makeStartMessage(newPlayer.get('username')));
-    }
-
-    async generateLoot() {
-        const player: IPlayer | null = await Player.findOne({ id: this.user.id }).exec();
-
-        const makeItem = await player?.makeItem();
-        //console.log(makeItem);
-        return;
-
     }
 
     async rebirth() {
@@ -156,6 +149,76 @@ class GenericCommands extends BaseCommands {
         } catch (exception) {
             this.message.channel.send(makeInvalidHeroclassMessage(player.get('username')));
         }
+    }
+
+    async loot(type?: string, amount?: number) {
+
+        const player: IPlayer | null = await Player.findOne({ id: this.user.id }).exec();
+
+        const options: Array<String> = ['normal', 'rare', 'epic', 'legendary', 'ascended', 'set'];
+
+        let thisAmount = 0;
+        let typeAcquired = false;
+
+        if (!player) {
+            this.message.channel.send('Player not found. Please try again');
+            return;
+        }
+
+        if(type === undefined){
+
+                const availableChests = await player.returnLoot(player);
+                console.log(availableChests);
+        
+                const availableLootMessage = await makeAvailableLootMessage(availableChests, player);
+                this.message.channel.send(availableLootMessage);
+                return;  
+                
+        }
+
+        if (amount === undefined){
+            
+        thisAmount = 1;
+        }
+        else
+        {
+        thisAmount = amount;
+        }
+
+        
+        const thisType = type;
+        const thisTypeCaseFixed = thisType.toLowerCase();
+
+
+        
+
+
+        if(!options.includes(thisTypeCaseFixed))
+        {
+            const improperName = makeStandardMessage('Are you sure you typed the chest type properly?\n Try again using [normal, rare, epic, legendary, ascended, set]');
+            this.message.channel.send(improperName);
+            return;  
+        }
+
+        const generateItems = await player.makeItem(thisTypeCaseFixed, thisAmount);
+        console.log(generateItems);
+
+        if(generateItems.enough == false){
+            const notEnoughChests = await makeStandardMessage(`Sorry, it looks like you don't have enough chests to do that!`);
+            this.message.channel.send(notEnoughChests);
+            return;  
+        }
+
+        if(generateItems.enough == true){
+            const success = await makeChestsOpenedResultsMessage(generateItems);
+            this.message.channel.send(success);
+            return;  
+        }
+
+        //const makeItem = await player?.makeItem();
+        //console.log(makeItem);
+        return;
+
     }
 }
 

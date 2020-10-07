@@ -55,6 +55,7 @@ interface IPlayer extends Document {
     clearBag: Function,
     postBattleLootRewards: Function,
     giveChest: Function,
+    returnLoot: Function,
 }
 
 interface RewardResult {
@@ -93,6 +94,11 @@ interface LootReward{
     set: number,
     total: number,
 }
+
+interface ItemGenerationResult{
+    items: Array<IItem>,
+    enough: boolean,
+};
 
 
 const PlayerSchema = new Schema({
@@ -589,20 +595,43 @@ PlayerSchema.methods.rebirth = async function () {
     return this.save();
 };
 
-PlayerSchema.methods.makeItem = function ()
+PlayerSchema.methods.makeItem = async function (type: string, amount: number)
 {
     const item: IItem = new Item;
 
-    const thisItem = item.makeItem();
+    let realAmount = amount;
+    let realType = type;
+    let enough = false;
 
-    if (thisItem.attack){
+    const amountBeforeLoot = this.get(`loot.${realType}`);
+    let allItemsGenerated = [];
+
+    if(realAmount <= amountBeforeLoot){
+    enough = true;    
+    const thisItem = await item.makeItem(realType, realAmount);
+    allItemsGenerated = thisItem;    
+
+    const amountAfterLoot = await this.set(`loot.${realType}`, (amountBeforeLoot - realAmount));
+
+  ///  for (let i = 0; i <= thisItem.length; i++) {
+  ///      this.backpack.push(thisItem[i]);
+  ///      allItemsGenerated.push(thisItem);
+ ///   }
 
     }
+    
+    if(realAmount > amountBeforeLoot)
+    {
+        enough = false;
+    }
 
-    this.backpack.push(thisItem);
-    console.log(this.backpack);
+    const save = this.save();
 
-    return this.save();
+    return <ItemGenerationResult>{
+        items: allItemsGenerated,
+        enough,
+    };
+
 }
 
 
@@ -830,6 +859,32 @@ PlayerSchema.methods.giveChest = async function (loot: LootReward) {
     return loot;
 };
 
+PlayerSchema.methods.returnLoot = async function (player: IPlayer) {
+
+    const totalNormalChests = player.get(`loot.normal`);
+    const totalRareChests = player.get(`loot.rare`);
+    const totalEpicChests = player.get(`loot.epic`);
+    const totalLegendaryChests = player.get(`loot.legendary`);
+    const totalAscendedChests = player.get(`loot.ascended`);
+    const totalSetChests = player.get(`loot.sets`);
+    const totalChests = totalNormalChests + totalRareChests + totalEpicChests + totalLegendaryChests + totalAscendedChests + totalSetChests;
+
+    const loot: LootReward = {
+        player: player,
+        normal: totalNormalChests,
+        rare: totalRareChests,
+        epic: totalEpicChests,
+        legendary: totalLegendaryChests,
+        ascended: totalAscendedChests,
+        set: totalSetChests,
+        total: totalChests,
+    }
+
+
+    return loot;
+};
+
+
 const Player = model<IPlayer>('Player', PlayerSchema);
 
-export { Player, PlayerSchema, IPlayer, RewardResult, EarnedSkillpoints, SkillpointResults, LootReward };
+export { Player, PlayerSchema, IPlayer, RewardResult, EarnedSkillpoints, SkillpointResults, LootReward, ItemGenerationResult };

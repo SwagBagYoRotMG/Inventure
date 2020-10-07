@@ -44,6 +44,12 @@ interface IEquip{
     slot: string,
 }
 
+interface IMaterial{
+  name: string,
+  rarity: string,
+  rarityIndex: number,
+}
+
 const ItemSchema = new Schema({
     name: String,
     slot: String,
@@ -85,8 +91,10 @@ const ItemSchema = new Schema({
     },
 });
 
-ItemSchema.methods.makeItem = function ()
+ItemSchema.methods.makeItem = function (type: string, amount: number)
 {
+let createdItemsArray = [];
+
 
 
 const prefixes: Array<IPrefix> = [
@@ -422,7 +430,7 @@ const suffixes: Array<ISuffix> = [
     dexterity: 0,
   },
   {
-    name: 'charismampions', 
+    name: 'champions', 
     attack: 12,
     the: false,
     charisma: 0,
@@ -977,35 +985,396 @@ const equipment: Array<IEquip> = [
 
 ];
 
+const allMaterial: Array<IMaterial> = [
+  {
+    name: 'Cloth',
+    rarity: 'normal',
+    rarityIndex: 0,
+  },
+  {
+    name: 'Linen',
+    rarity: 'normal',
+    rarityIndex: 0,
+  },
+  {
+    name: 'Silk',
+    rarity: 'normal',
+    rarityIndex: 0,
+  },
+  {
+    name: 'Fur',
+    rarity: 'normal',
+    rarityIndex: 1,
+  },
+  {
+    name: 'Dwarven',
+    rarity: 'normal',
+    rarityIndex: 2,
+  },
+  {
+    name: 'Hide',
+    rarity: 'normal',
+    rarityIndex: 1,
+  },
+  {
+    name: 'Steel',
+    rarity: 'normal',
+    rarityIndex: 1,
+  },
+];
+const rareMaterial: Array<IMaterial> = [
+  {
+    name: 'Bronze',
+    rarity: 'rare',
+    rarityIndex: 2,
+  },
+  {
+    name: 'Iron',
+    rarity: 'rare',
+    rarityIndex: 3,
+  },
+  {
+    name: 'Bone',
+    rarity: 'rare',
+    rarityIndex: 2,
+  },
+  {
+    name: 'Gold',
+    rarity: 'rare',
+    rarityIndex: 3,
+  },
+  {
+    name: 'Silver',
+    rarity: 'rare',
+    rarityIndex: 2,
+  },
+  {
+    name: 'Elven',
+    rarity: 'rare',
+    rarityIndex: 3,
+  },
+  {
+    name: 'Quicksilver',
+    rarity: 'rare',
+    rarityIndex: 4,
+  },  
+  {
+    name: 'Platinum',
+    rarity: 'rare',
+    rarityIndex: 2,
+  },
+];
+
+const epicMaterial: Array<IMaterial> = [
+  {
+    name: 'Ruby',
+    rarity: 'epic',
+    rarityIndex: 4,
+  },
+  {
+    name: 'Duranium',
+    rarity: 'epic',
+    rarityIndex: 5,
+  },
+  {
+    name: 'Mithril',
+    rarity: 'epic',
+    rarityIndex: 4,
+  },
+  {
+    name: 'Obsidian',
+    rarity: 'epic',
+    rarityIndex: 5,
+  },
+  {
+    name: 'Titanium',
+    rarity: 'epic',
+    rarityIndex: 4,
+  },
+  {
+    name: 'Adamantite',
+    rarity: 'epic',
+    rarityIndex: 6,
+  },
+  {
+    name: 'Ebony',
+    rarity: 'epic',
+    rarityIndex: 7,
+  },
+  {
+    name: 'Diamond-Studded',
+    rarity: 'epic',
+    rarityIndex: 5,
+  },
+];
+
+const legendaryMaterial: Array<IMaterial> = [
+  {
+    name: 'Dragonscale',
+    rarity: 'legendary',
+    rarityIndex: 12,
+  },
+  {
+    name: 'Dalekanium',
+    rarity: 'legendary',
+    rarityIndex: 11,
+  },
+  {
+    name: 'Tritanium',
+    rarity: 'legendary',
+    rarityIndex: 11,
+  },
+  {
+    name: 'Runite',
+    rarity: 'legendary',
+    rarityIndex: 10,
+  },
+  {
+    name: 'Vibranium',
+    rarity: 'legendary',
+    rarityIndex: 12,
+  },
+  {
+    name: 'Draconium',
+    rarity: 'legendary',
+    rarityIndex: 14,
+  },
+  {
+    name: 'Dragonplate',
+    rarity: 'legendary',
+    rarityIndex: 13,
+  },
+  {
+    name: 'Cobalt',
+    rarity: 'legendary',
+    rarityIndex: 12,
+  },
+  {
+    name: 'Obsidium',
+    rarity: 'legendary',
+    rarityIndex: 11,
+  },
+  {
+    name: 'Nanite',
+    rarity: 'legendary',
+    rarityIndex: 15,
+  },
+  {
+    name: 'Unknown',
+    rarity: 'legendary',
+    rarityIndex: 20,
+  },
+];
+
+const ascendedMaterial: Array<IMaterial> = [
+  {
+    name: 'Cloth',
+    rarity: 'ascended',
+    rarityIndex: 5,
+  },
+  {
+    name: 'Linen',
+    rarity: 'ascended',
+    rarityIndex: 5,
+  },
+  {
+    name: 'Silk',
+    rarity: 'ascended',
+    rarityIndex: 5,
+  },
+  {
+    name: 'Fur',
+    rarity: 'ascended',
+    rarityIndex: 6,
+  },
+  {
+    name: 'Dwarven',
+    rarity: 'ascended',
+    rarityIndex: 7,
+  },
+  {
+    name: 'Hide',
+    rarity: 'ascended',
+    rarityIndex: 6,
+  },
+  {
+    name: 'Steel',
+    rarity: 'ascended',
+    rarityIndex: 6,
+  },
+  {
+    name: 'Bronze',
+    rarity: 'ascended',
+    rarityIndex: 7,
+  },
+  {
+    name: 'Iron',
+    rarity: 'ascended',
+    rarityIndex: 8,
+  },
+  {
+    name: 'Bone',
+    rarity: 'ascended',
+    rarityIndex: 7,
+  },
+  {
+    name: 'Gold',
+    rarity: 'ascended',
+    rarityIndex: 8,
+  },
+  {
+    name: 'Silver',
+    rarity: 'ascended',
+    rarityIndex: 7,
+  },
+  {
+    name: 'Elven',
+    rarity: 'ascended',
+    rarityIndex: 8,
+  },
+  {
+    name: 'Quicksilver',
+    rarity: 'ascended',
+    rarityIndex: 9,
+  },
+  {
+    name: 'Platinum',
+    rarity: 'ascended',
+    rarityIndex: 7,
+  },
+  {
+    name: 'Ruby',
+    rarity: 'ascended',
+    rarityIndex: 9,
+  },
+  {
+    name: 'Duranium',
+    rarity: 'ascended',
+    rarityIndex: 10,
+  },
+  {
+    name: 'Mithril',
+    rarity: 'ascended',
+    rarityIndex: 9,
+  },
+  {
+    name: 'Obsidian',
+    rarity: 'ascended',
+    rarityIndex: 10,
+  },
+  {
+    name: 'Titanium',
+    rarity: 'ascended',
+    rarityIndex: 9,
+  },
+  {
+    name: 'Adamantite',
+    rarity: 'ascended',
+    rarityIndex: 11,
+  },
+  {
+    name: 'Ebony',
+    rarity: 'ascended',
+    rarityIndex: 12,
+  },
+  {
+    name: 'Diamond-Studded',
+    rarity: 'ascended',
+    rarityIndex: 10,
+  },
+  {
+    name: 'Dragonscale',
+    rarity: 'ascended',
+    rarityIndex: 17,
+  },
+  {
+    name: 'Dalekanium',
+    rarity: 'ascended',
+    rarityIndex: 16,
+  },
+  {
+    name: 'Tritanium',
+    rarity: 'ascended',
+    rarityIndex: 16,
+  },
+  {
+    name: 'Runite',
+    rarity: 'ascended',
+    rarityIndex: 15,
+  },
+  {
+    name: 'Vibranium',
+    rarity: 'ascended',
+    rarityIndex: 17,
+  },
+  {
+    name: 'Draconium',
+    rarity: 'ascended',
+    rarityIndex: 19,
+  },
+  {
+    name: 'Dragonplate',
+    rarity: 'ascended',
+    rarityIndex: 18,
+  },
+  {
+    name: 'Cobalt',
+    rarity: 'ascended',
+    rarityIndex: 17,
+  },
+  {
+    name: 'Obsidium',
+    rarity: 'ascended',
+    rarityIndex: 16,
+  },
+  {
+    name: 'Nanite',
+    rarity: 'ascended',
+    rarityIndex: 20,
+  },
+  {
+    name: 'Unknown',
+    rarity: 'ascended',
+    rarityIndex: 30,
+  },
+];
+
+for (let i = 0; i <= amount; i++) {
+
+
 
 let randomPrefix = Math.floor(Math.random() * prefixes.length);
 let randomMaterials = Math.floor(Math.random() * suffixes.length);
 let randomEquipment = Math.floor(Math.random() * equipment.length);
+let randomMaterial = Math.floor(Math.random() * allMaterial.length);
 
 let selectedPrefix = prefixes[randomPrefix];
 let selectedSuffixes = suffixes[randomMaterials];
 let selectedEquipment = equipment[randomEquipment];
+let selectedMaterial = allMaterial[randomMaterial];
 
 let isThe = ' ';
+
+
 
 if(selectedSuffixes.the){
     isThe = ' the ';
 }
 
-let finishedName = (selectedPrefix.name + ' ' + selectedEquipment.name + ' ' + 'of' + `${isThe}`  + selectedSuffixes.name);
+let finishedName = (selectedPrefix.name + ' ' + selectedMaterial.name + ' ' + selectedEquipment.name + ' ' + 'of' + `${isThe}`  + selectedSuffixes.name);
 let slot = selectedEquipment.slot;
 
-let rarity = 'normal';
+let rarity = selectedMaterial.rarity;
 
 let owned = 0;
 
-const totalAtt = (selectedPrefix.attack + selectedEquipment.attack + selectedSuffixes.attack);
-const totalInt = (selectedPrefix.intelligence + selectedEquipment.intelligence + selectedSuffixes. intelligence);
-const totalCha = (selectedPrefix.charisma + selectedEquipment.charisma + selectedSuffixes. charisma);
-const totalLuck = (selectedPrefix.luck + selectedEquipment.luck + selectedSuffixes. luck);
-const totalDex = (selectedPrefix.dexterity + selectedEquipment.dexterity + selectedSuffixes. dexterity);
+const totalAtt = ((selectedPrefix.attack + selectedEquipment.attack + selectedSuffixes.attack) * (selectedMaterial.rarityIndex / 2));
+const totalInt = ((selectedPrefix.intelligence + selectedEquipment.intelligence + selectedSuffixes. intelligence) * (selectedMaterial.rarityIndex / 2));
+const totalCha = ((selectedPrefix.charisma + selectedEquipment.charisma + selectedSuffixes. charisma) * (selectedMaterial.rarityIndex / 2));
+const totalLuck = ((selectedPrefix.luck + selectedEquipment.luck + selectedSuffixes. luck) * (selectedMaterial.rarityIndex / 2));
+const totalDex = ((selectedPrefix.dexterity + selectedEquipment.dexterity + selectedSuffixes. dexterity) * (selectedMaterial.rarityIndex / 2));
 
-return <IItem>{
+const item = <IItem>{
     name: finishedName,
     slot,
     rarity,
@@ -1017,8 +1386,14 @@ return <IItem>{
     dexterity: totalDex,
     luck: totalLuck,
     }
+  }
 
-    }
+  createdItemsArray.push(item);
+
+}
+
+return createdItemsArray;
+
 }
 const Item = model<IItem>('Item', ItemSchema);
 

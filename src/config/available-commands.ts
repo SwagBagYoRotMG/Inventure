@@ -10,7 +10,7 @@ export default {
     heroclass: { class: GenericCommands, method: 'selectHeroclass' },
     rebirth: { class: GenericCommands, method: 'rebirth' },
     skill: {class: GenericCommands, method: 'skillpoints'},
-    genloot: {class: GenericCommands, method: 'generateLoot'},
+    loot: {class: GenericCommands, method: 'loot'},
 
     // Adventuring Commands
     adventure: { class: AdventureCommands, method: 'adventure' },
@@ -34,4 +34,5 @@ export default {
     givexp: { class: AdminCommands, method: 'giveExperience' },
     unlock: { class: AdminCommands, method: 'unlock' },
     clearbag: { class: AdminCommands, method: 'clearBag' },
+    genloot: {class: AdminCommands, method: 'generateLoot'},
 }
