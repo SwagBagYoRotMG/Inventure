@@ -53,6 +53,8 @@ interface IPlayer extends Document {
     useSkillpoints: Function,
     makeItem: Function,
     clearBag: Function,
+    postBattleLootRewards: Function,
+    giveChest: Function,
 }
 
 interface RewardResult {
@@ -80,6 +82,18 @@ interface SkillpointResults{
     skill: string,
     worked: boolean,
 }
+
+interface LootReward{
+    player: IPlayer,
+    normal: number,
+    rare: number,
+    epic: number,
+    legendary: number,
+    ascended: number,
+    set: number,
+    total: number,
+}
+
 
 const PlayerSchema = new Schema({
     id: {
@@ -703,6 +717,119 @@ PlayerSchema.methods.clearBag = async function () {
     return this.save();
 };
 
+PlayerSchema.methods.postBattleLootRewards = function (player: IPlayer, area: IArea)
+{
+    const normalRoll = Math.random();
+    const rareRoll = Math.random();
+    const epicRoll = Math.random();
+    const legendaryRoll = Math.random();
+    const ascendedRoll = Math.random();
+    const setRoll = Math.random();
+
+    const normalDropRate = area.normalChestDropRate;
+    const rareDropRate = area.rareChestDropRate;
+    const epicDropRate = area.epicChestDropRate;
+    const legendaryDropRate = area.legendaryChestDropRate;
+    const ascendedDropRate = area.ascendedChestDropRate;
+    const setDropRate = area.setChestDropRate;
+
+    let totalNormalChests = 0;
+    let totalRareChests = 0;
+    let totalEpicChests = 0;
+    let totalLegendaryChests = 0;
+    let totalAscendedChests = 0;
+    let totalSetChests = 0;
+
+    if(normalRoll < normalDropRate)
+    {
+        if(normalRoll < (normalDropRate / 2)){
+            totalNormalChests = 2;
+        }
+        totalNormalChests = 1;
+    }
+
+    if(rareRoll < rareDropRate)
+    {
+        if(rareRoll < (rareDropRate / 2)){
+            totalRareChests = 2;
+        }
+        totalRareChests = 1;
+    }
+
+    if(epicRoll < epicDropRate)
+    {
+        if(normalRoll < (normalDropRate / 2)){
+            totalEpicChests = 2;
+        }
+        totalEpicChests = 1;
+    }
+
+    if(legendaryRoll < legendaryDropRate)
+    {
+        if(legendaryRoll < (legendaryDropRate / 2)){
+            totalLegendaryChests = 2;
+        }
+        totalLegendaryChests = 1;
+    }
+
+    if(ascendedRoll < ascendedDropRate)
+    {
+        if(ascendedRoll < (ascendedDropRate / 2)){
+            totalAscendedChests = 2;
+        }
+        totalAscendedChests = 1;
+    }
+
+    if(setRoll < setDropRate)
+    {
+        if(setRoll < (setDropRate / 2)){
+            totalSetChests = 2;
+        }
+        totalSetChests = 1;
+    }
+
+    const total = totalNormalChests + totalRareChests + totalEpicChests + totalLegendaryChests + totalAscendedChests + totalSetChests;
+
+    const loot: LootReward = {
+        player: player,
+        normal: totalNormalChests,
+        rare: totalRareChests,
+        epic: totalEpicChests,
+        legendary: totalLegendaryChests,
+        ascended: totalAscendedChests,
+        set: totalSetChests,
+        total,
+    }
+
+    const give = this.giveChest(loot);
+    return give;
+}
+
+PlayerSchema.methods.giveChest = async function (loot: LootReward) {
+
+
+    const currentNormalChests = this.get(`loot.normal`);
+    const newNormalChests = await this.set(`loot.normal`, currentNormalChests + loot.normal);
+
+    const currentRareChests = this.get(`loot.rare`);
+    const newRareChests = await this.set(`loot.rare`, currentRareChests + loot.rare);
+
+    const currentEpicChests = this.get(`loot.epic`);
+    const newEpicChests = await this.set(`loot.epic`, currentEpicChests + loot.epic);
+
+    const currentLegendaryChests = this.get(`loot.legendary`);
+    const newLegendaryChests = await this.set(`loot.legendary`, currentLegendaryChests + loot.legendary);
+
+    const currentAscendedChests = this.get(`loot.ascended`);
+    const newAscendedChests = await this.set(`loot.ascended`, currentAscendedChests + loot.ascended);
+
+    const currentSetChests = this.get(`loot.sets`);
+    const newSetChests = await this.set(`loot.sets`, currentSetChests + loot.set);
+
+
+    return loot;
+};
+
 const Player = model<IPlayer>('Player', PlayerSchema);
 
-export { Player, PlayerSchema, IPlayer, RewardResult, EarnedSkillpoints, SkillpointResults };
+export { Player, PlayerSchema, IPlayer, RewardResult, EarnedSkillpoints, SkillpointResults, LootReward };

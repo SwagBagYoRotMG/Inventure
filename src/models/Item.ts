@@ -588,7 +588,7 @@ const equipment: Array<IEquip> = [
 },
 {
     name : 'Amulet',
-    slot: 'charismarm', 
+    slot: 'charm', 
     dexterity: 0,
     intelligence: 2,
     charisma: 1,
@@ -596,8 +596,8 @@ const equipment: Array<IEquip> = [
     attack: 1,
 },
 {
-    name : 'charismarm',
-    slot: 'charismarm', 
+    name : 'Charm',
+    slot: 'charm', 
     dexterity: 0,
     intelligence: 1,
     charisma: 3,
@@ -606,7 +606,7 @@ const equipment: Array<IEquip> = [
 },
 {
     name : 'Medallion',
-    slot: 'charismarm', 
+    slot: 'charm', 
     dexterity: 0,
     intelligence: 2,
     charisma: 1,
@@ -615,7 +615,7 @@ const equipment: Array<IEquip> = [
 },
 {
     name : 'Shard',
-    slot: 'charismarm', 
+    slot: 'charm', 
     dexterity: 1,
     intelligence: 3,
     charisma: 0,
