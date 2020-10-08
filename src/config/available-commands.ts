@@ -11,6 +11,7 @@ export default {
     rebirth: { class: GenericCommands, method: 'rebirth' },
     skill: {class: GenericCommands, method: 'skillpoints'},
     loot: {class: GenericCommands, method: 'loot'},
+    backpack: {class: GenericCommands, method: 'backpack'},
 
     // Adventuring Commands
     adventure: { class: AdventureCommands, method: 'adventure' },

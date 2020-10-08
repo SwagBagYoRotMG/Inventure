@@ -56,6 +56,7 @@ interface IPlayer extends Document {
     postBattleLootRewards: Function,
     giveChest: Function,
     returnLoot: Function,
+    returnBackpack: Function,
 }
 
 interface RewardResult {
@@ -613,10 +614,9 @@ PlayerSchema.methods.makeItem = async function (type: string, amount: number)
 
     const amountAfterLoot = await this.set(`loot.${realType}`, (amountBeforeLoot - realAmount));
 
-  ///  for (let i = 0; i <= thisItem.length; i++) {
-  ///      this.backpack.push(thisItem[i]);
-  ///      allItemsGenerated.push(thisItem);
- ///   }
+    for (let i = 0; i <= thisItem.length; i++) {
+        this.backpack.push(thisItem[i]);
+      }
 
     }
     
@@ -882,6 +882,18 @@ PlayerSchema.methods.returnLoot = async function (player: IPlayer) {
 
 
     return loot;
+};
+
+PlayerSchema.methods.returnBackpack = function () {
+
+    let allItems: Array<IItem> = [];
+    let currentBackpack = this.get('backpack');
+
+    for (let i = 0; i <= currentBackpack.length; i++) {
+        allItems.push(currentBackpack[i])
+    }
+
+    return allItems;
 };
 
 

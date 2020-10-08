@@ -13,17 +13,24 @@ const makeChestsOpenedResultsMessage = (allChestsResults: ItemGenerationResult) 
     ];
 
 
+
     let embed = new MessageEmbed()
         .setColor('GOLD') 
         .setTitle('Loot Results:')
         .setDescription(desc.join('\n'))
     for (let i = 0; i < allChestsResults.items.length; i++) {
-         
+         let beginning = 'A';
+
+         if (allChestsResults.items[i].rarity == 'ascended' || allChestsResults.items[i].rarity == 'epic')
+         {
+            beginning = 'An';
+         }
+
 
         embed.addFields(
             <EmbedFieldData>{
                 name: `${allChestsResults.items[i].name}`,
-                value: `A ${allChestsResults.items[i].rarity} ${allChestsResults.items[i].slot} piece!`,
+                value: `${beginning} ${allChestsResults.items[i].rarity} ${allChestsResults.items[i].slot} piece!`,
                 inline: false,
             },
             // Bonus Damage Not Added Yet

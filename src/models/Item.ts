@@ -1,3 +1,4 @@
+import { Console } from 'console';
 import { Schema, model, Document } from 'mongoose';
 
 interface IItem extends Document {
@@ -94,8 +95,7 @@ const ItemSchema = new Schema({
 ItemSchema.methods.makeItem = function (type: string, amount: number)
 {
 let createdItemsArray = [];
-
-
+const trueAmount = amount;
 
 const prefixes: Array<IPrefix> = [
     {
@@ -195,7 +195,7 @@ const prefixes: Array<IPrefix> = [
       intelligence: 0,
     },
     {
-    name:'Encharismanted',
+    name:'Enchanted',
       attack: 5,
       charisma: 3,
       dexterity: 5,
@@ -985,7 +985,7 @@ const equipment: Array<IEquip> = [
 
 ];
 
-const allMaterial: Array<IMaterial> = [
+const normalMaterial: Array<IMaterial> = [
   {
     name: 'Cloth',
     rarity: 'normal',
@@ -1339,19 +1339,72 @@ const ascendedMaterial: Array<IMaterial> = [
   },
 ];
 
-for (let i = 0; i <= amount; i++) {
 
 
+
+for (let i = 0; i < trueAmount; i++) {
+
+//let selectedNormalMaterialChance = Math.floor(Math.random() * normalMaterial.length);
+//let selectedRareMaterialChance = Math.floor(Math.random() * rareMaterial.length);
+//let selectedEpicMaterialChance = Math.floor(Math.random() * epicMaterial.length);
+//let selectedLegendaryMaterialChance = Math.floor(Math.random() * legendaryMaterial.length);
+//let selectedAscendedMaterialChance = Math.floor(Math.random() * ascendedMaterial.length);
+
+let selectedRarity = type.toLowerCase();
+let randomMaterial = 0;
+
+const options: Array<String> = ['normal', 'rare', 'epic', 'legendary', 'ascended'];
+
+    if (!options.includes(selectedRarity)) {
+        throw new Error('Invalid chest type!');
+        return;
+    }
+    if(selectedRarity == 'normal'){
+        selectedRarity = 'normalMaterial';
+        randomMaterial = Math.floor(Math.random() * normalMaterial.length);
+    }
+    if(selectedRarity == 'rare'){
+      selectedRarity = 'rareMaterial';
+      randomMaterial = Math.floor(Math.random() * rareMaterial.length);
+    }
+    if(selectedRarity == 'epic'){
+      selectedRarity = 'epicMaterial';
+      randomMaterial = Math.floor(Math.random() * epicMaterial.length);
+    }
+    if(selectedRarity == 'legendary'){
+      selectedRarity = 'legendaryMaterial';
+      randomMaterial = Math.floor(Math.random() * legendaryMaterial.length);
+    }
+    if(selectedRarity == 'ascended'){
+      selectedRarity = 'ascendedMaterial';
+      randomMaterial = Math.floor(Math.random() * ascendedMaterial.length);
+    }
 
 let randomPrefix = Math.floor(Math.random() * prefixes.length);
 let randomMaterials = Math.floor(Math.random() * suffixes.length);
 let randomEquipment = Math.floor(Math.random() * equipment.length);
-let randomMaterial = Math.floor(Math.random() * allMaterial.length);
+
 
 let selectedPrefix = prefixes[randomPrefix];
 let selectedSuffixes = suffixes[randomMaterials];
 let selectedEquipment = equipment[randomEquipment];
-let selectedMaterial = allMaterial[randomMaterial];
+let selectedMaterial = normalMaterial[randomMaterial];
+
+if(selectedRarity == 'normalMaterial'){
+  selectedMaterial = normalMaterial[randomMaterial];
+}
+if(selectedRarity == 'rareMaterial'){
+  selectedMaterial = rareMaterial[randomMaterial];
+}
+if(selectedRarity == 'epicMaterial'){
+  selectedMaterial = epicMaterial[randomMaterial];
+}
+if(selectedRarity == 'legendaryMaterial'){
+  selectedMaterial = legendaryMaterial[randomMaterial];
+}
+if(selectedRarity == 'ascendedMaterial'){
+  selectedMaterial = ascendedMaterial[randomMaterial];
+}
 
 let isThe = ' ';
 
@@ -1360,6 +1413,7 @@ let isThe = ' ';
 if(selectedSuffixes.the){
     isThe = ' the ';
 }
+// console.log(selectedMaterial.name);
 
 let finishedName = (selectedPrefix.name + ' ' + selectedMaterial.name + ' ' + selectedEquipment.name + ' ' + 'of' + `${isThe}`  + selectedSuffixes.name);
 let slot = selectedEquipment.slot;

@@ -220,6 +220,23 @@ class GenericCommands extends BaseCommands {
         return;
 
     }
+
+    async backpack() {
+        let targetPlayerId = this.message.author.id;
+
+        const player: IPlayer | null = await Player.findOne({ id: targetPlayerId }).exec();
+
+        if (!player) {
+            this.message.channel.send('Player not found. Please try again');
+            return;
+        }
+
+        const backpack = player.returnBackpack();
+        console.log(backpack);
+        this.message.channel.send(`${backpack}`);
+        return;
+
+    }
 }
 
 export { GenericCommands };
