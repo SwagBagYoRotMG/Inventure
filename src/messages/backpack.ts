@@ -4,8 +4,6 @@ import { IItem } from '../models/Item';
 
 
 const makeBackpackMessage = (player: IPlayer, backpack: IItem[]) => {
-    var table = require('text-table');
-    var ansiAlign = require('ansi-align')
     // TODO: Actually make stats pull from player data
     let originalSortedBackpack = backpack;
 
@@ -30,7 +28,7 @@ const makeBackpackMessage = (player: IPlayer, backpack: IItem[]) => {
 
     let sortedBackpack = backpack;
 
-    console.log(sortedBackpack);
+    // console.log(sortedBackpack);
 
     let sortedHeadItems: Array<String> = [];
     let sortedNeckItems: Array<String> = [];
@@ -281,7 +279,7 @@ const makeBackpackMessage = (player: IPlayer, backpack: IItem[]) => {
         `Active bonuses: ( 0  | 0  | 0  | 0  | 0  ) - Attributes: 0% | EXP: 0% | Credits: 0% (TODO)`,
         `\`\`\``,
     ];
-    console.log(message);
+    // console.log(message);
     // return desc.join('\n');
     return message
 };
