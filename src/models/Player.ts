@@ -6,6 +6,8 @@ import { IArea } from '../areas/base-area';
 import { makeEarnedSkillpoints } from '../messages/earned-skillpoints-and-levelup';
 import { IItem } from '../models/Item'
 import { isIterationStatement } from 'typescript';
+import _ from 'lodash';
+
 
 interface IPlayer extends Document {
     id: string,
@@ -57,6 +59,7 @@ interface IPlayer extends Document {
     giveChest: Function,
     returnLoot: Function,
     returnBackpack: Function,
+    sortBackpack: Function,
 }
 
 interface RewardResult {
@@ -604,7 +607,9 @@ PlayerSchema.methods.makeItem = async function (type: string, amount: number)
     let realType = type;
     let enough = false;
 
-    const amountBeforeLoot = this.get(`loot.${realType}`);
+    const amountBeforeLoot = Number(this.get(`loot.${realType}`));
+    const amountAfterLoot = (amountBeforeLoot - realAmount);
+
     let allItemsGenerated = [];
 
     if(realAmount <= amountBeforeLoot){
@@ -612,10 +617,13 @@ PlayerSchema.methods.makeItem = async function (type: string, amount: number)
     const thisItem = await item.makeItem(realType, realAmount);
     allItemsGenerated = thisItem;    
 
-    const amountAfterLoot = await this.set(`loot.${realType}`, (amountBeforeLoot - realAmount));
+    const setAmountAfterLoot = await this.set(`loot.${realType}`, amountAfterLoot);
 
     for (let i = 0; i <= thisItem.length; i++) {
+        if(thisItem[i] != null)
+        {
         this.backpack.push(thisItem[i]);
+        }
       }
 
     }
@@ -884,17 +892,27 @@ PlayerSchema.methods.returnLoot = async function (player: IPlayer) {
     return loot;
 };
 
-PlayerSchema.methods.returnBackpack = function () {
+PlayerSchema.methods.returnBackpack = async function () {
 
-    let allItems: Array<IItem> = [];
-    let currentBackpack = this.get('backpack');
+    //let allItems: Array<IItem> = [];
+    //let currentBackpack = this.get('backpack');
 
-    for (let i = 0; i <= currentBackpack.length; i++) {
-        allItems.push(currentBackpack[i])
-    }
+    const sorted: Array<IItem> = await this.sortBackpack();
 
-    return allItems;
+    //for (let i = 0; i <= sorted.length; i++) {
+    //    allItems.push(sorted[i])
+    //}
+    //console.log(sorted);
+    return sorted;
 };
+
+PlayerSchema.methods.sortBackpack = async function () {
+
+    const currentBackpack: Array<IItem> = this.get('backpack');
+
+    const sorted = await _.sortBy(currentBackpack,[{slot: 'charm'},{slot: 'ring'},{slot: 'two handed'},{slot: 'right'},{slot: 'left'},{slot: 'boots'},{slot: 'legs'},{slot: 'belt'},{slot: 'gloves'},{slot: 'chest'},{slot: 'neck'},{slot: 'head'},{rarity: 'normal'},{rarity: 'rare'},{rarity: 'epic'},{rarity: 'legendary'},{rarity: 'ascended'},{rarity: 'set'}]);
+    return sorted;
+}
 
 
 const Player = model<IPlayer>('Player', PlayerSchema);

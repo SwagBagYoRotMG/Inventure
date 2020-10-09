@@ -9,6 +9,7 @@ import { makeStartMessage } from "../messages/start-message";
 import { makeRebirthSuccessMessage } from "../messages/rebirth-success";
 import { makeRebirthFailureMessage } from "../messages/rebirth-failure";
 import { makeStatsMessage } from "../messages/stats";
+import { makeBackpackMessage } from "../messages/backpack";
 import { Player, IPlayer } from '../models/Player';
 import BaseCommands from "./base-commands";
 import { makeShowHeroclassesMessage } from "../messages/show-heroclasses";
@@ -168,7 +169,7 @@ class GenericCommands extends BaseCommands {
         if(type === undefined){
 
                 const availableChests = await player.returnLoot(player);
-                console.log(availableChests);
+                // console.log(availableChests);
         
                 const availableLootMessage = await makeAvailableLootMessage(availableChests, player);
                 this.message.channel.send(availableLootMessage);
@@ -231,9 +232,13 @@ class GenericCommands extends BaseCommands {
             return;
         }
 
-        const backpack = player.returnBackpack();
-        console.log(backpack);
-        this.message.channel.send(`${backpack}`);
+        const backpack = await player.returnBackpack();
+
+        //console.log(backpack);
+
+        const formattedBackpack = await makeBackpackMessage(player, backpack);
+
+        this.message.channel.send(formattedBackpack);
         return;
 
     }

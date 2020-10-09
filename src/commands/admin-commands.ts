@@ -307,6 +307,15 @@ class AdminCommands extends BaseCommands {
 
     }
 
+    async sortBackpack() {
+        const player: IPlayer | null = await Player.findOne({ id: this.user.id }).exec();
+
+        const sort = await player?.sortBackpack();
+        //console.log(makeItem);
+        return;
+
+    }
+
 }
 
 export { AdminCommands };

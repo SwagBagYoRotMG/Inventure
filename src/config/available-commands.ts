@@ -36,4 +36,5 @@ export default {
     unlock: { class: AdminCommands, method: 'unlock' },
     clearbag: { class: AdminCommands, method: 'clearBag' },
     genloot: {class: AdminCommands, method: 'generateLoot'},
+    sortbag: {class: AdminCommands, method: 'sortBackpack'},
 }

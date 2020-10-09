@@ -5,6 +5,7 @@ interface IItem extends Document {
     name: string,
     slot: string,
     rarity: string,
+    rarityIndex: number,
     owned: number,
     stats: {
     attack: number,
@@ -58,6 +59,11 @@ const ItemSchema = new Schema({
         type: String,
         enum: ['normal', 'rare', 'epic', 'legendary', 'ascended', 'sets'],
     },
+    rarityIndex: {
+      type: Number,
+      default: 0,
+      min: 0,
+  },
     owned: {
         type: Number,
         default: 0,
@@ -67,27 +73,27 @@ const ItemSchema = new Schema({
         attack: {
             type: Number,
             default: 0,
-            min: -100,
+            min: -1000,
         },
         intelligence: {
             type: Number,
             default: 0,
-            min: -100,
+            min: -1000,
         },
         charisma: {
             type: Number,
             default: 0,
-            min: -100,
+            min: -1000,
         },
         dexterity: {
             type: Number,
             default: 0,
-            min: -100,
+            min: -1000,
         },
         luck: {
             type: Number,
             default: 0,
-            min: -100,
+            min: -1000,
         },
     },
 });
@@ -1419,19 +1425,30 @@ let finishedName = (selectedPrefix.name + ' ' + selectedMaterial.name + ' ' + se
 let slot = selectedEquipment.slot;
 
 let rarity = selectedMaterial.rarity;
+let rarityIndex = selectedMaterial.rarityIndex;
 
 let owned = 0;
 
-const totalAtt = ((selectedPrefix.attack + selectedEquipment.attack + selectedSuffixes.attack) * (selectedMaterial.rarityIndex / 2));
-const totalInt = ((selectedPrefix.intelligence + selectedEquipment.intelligence + selectedSuffixes. intelligence) * (selectedMaterial.rarityIndex / 2));
-const totalCha = ((selectedPrefix.charisma + selectedEquipment.charisma + selectedSuffixes. charisma) * (selectedMaterial.rarityIndex / 2));
-const totalLuck = ((selectedPrefix.luck + selectedEquipment.luck + selectedSuffixes. luck) * (selectedMaterial.rarityIndex / 2));
-const totalDex = ((selectedPrefix.dexterity + selectedEquipment.dexterity + selectedSuffixes. dexterity) * (selectedMaterial.rarityIndex / 2));
+let totalAtt = Math.round(selectedPrefix.attack + selectedEquipment.attack + selectedSuffixes.attack);
+let totalInt = Math.round(selectedPrefix.intelligence + selectedEquipment.intelligence + selectedSuffixes. intelligence);
+let totalCha = Math.round(selectedPrefix.charisma + selectedEquipment.charisma + selectedSuffixes. charisma);
+let totalLuck = Math.round(selectedPrefix.luck + selectedEquipment.luck + selectedSuffixes. luck);
+let totalDex = Math.round(selectedPrefix.dexterity + selectedEquipment.dexterity + selectedSuffixes. dexterity);
+
+if(rarityIndex > 0)
+{
+totalAtt = Math.round(((selectedPrefix.attack + selectedEquipment.attack + selectedSuffixes.attack) * (selectedMaterial.rarityIndex / 2)));
+totalInt = Math.round(((selectedPrefix.intelligence + selectedEquipment.intelligence + selectedSuffixes. intelligence) * (selectedMaterial.rarityIndex / 2)));
+totalCha = Math.round(((selectedPrefix.charisma + selectedEquipment.charisma + selectedSuffixes. charisma) * (selectedMaterial.rarityIndex / 2)));
+totalLuck = Math.round(((selectedPrefix.luck + selectedEquipment.luck + selectedSuffixes. luck) * (selectedMaterial.rarityIndex / 2)));
+totalDex = Math.round(((selectedPrefix.dexterity + selectedEquipment.dexterity + selectedSuffixes. dexterity) * (selectedMaterial.rarityIndex / 2)));
+}
 
 const item = <IItem>{
     name: finishedName,
     slot,
     rarity,
+    rarityIndex,
     owned,
     stats: {
     attack: totalAtt,
