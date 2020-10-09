@@ -12,6 +12,7 @@ export default {
     skill: {class: GenericCommands, method: 'skillpoints'},
     loot: {class: GenericCommands, method: 'loot'},
     backpack: {class: GenericCommands, method: 'backpack'},
+    equip: {class: GenericCommands, method: 'equip'},
 
     // Adventuring Commands
     adventure: { class: AdventureCommands, method: 'adventure' },

@@ -60,6 +60,8 @@ interface IPlayer extends Document {
     returnLoot: Function,
     returnBackpack: Function,
     sortBackpack: Function,
+    equip: Function,
+    unequip: Function,
 }
 
 interface RewardResult {
@@ -913,6 +915,174 @@ PlayerSchema.methods.sortBackpack = async function () {
     const sorted = await _.sortBy(currentBackpack,[{slot: 'charm'},{slot: 'ring'},{slot: 'two handed'},{slot: 'right'},{slot: 'left'},{slot: 'boots'},{slot: 'legs'},{slot: 'belt'},{slot: 'gloves'},{slot: 'chest'},{slot: 'neck'},{slot: 'head'},{rarity: 'normal'},{rarity: 'rare'},{rarity: 'epic'},{rarity: 'legendary'},{rarity: 'ascended'},{rarity: 'set'}]);
     return sorted;
 }
+
+PlayerSchema.methods.equip = async function (name: string) {
+
+    const itemName = name;
+    const check = await this.checkPlayerHaveItem(itemName);
+    const currentBackpack: Array<IItem> = this.get('backpack');
+    let selectedItem;
+    let worked = false;
+
+    const currentAtt = await this.get(`stats.attack`);
+    const currentCha = await this.get(`stats.charisma`);
+    const currentInt = await this.get(`stats.intelligence`);
+    const currentDex = await this.get(`stats.dexterity`);
+    const currentLuck = await this.get(`stats.luck`);
+
+
+
+    
+
+    if(check)
+    {
+        for (let i = 0; i < currentBackpack.length; i++) {
+            if(currentBackpack[i].name.includes(name))
+            {
+                selectedItem = currentBackpack[i];
+            }
+
+            
+        }
+        if(!selectedItem){
+            return;
+        }
+
+        const selectedItemSlot = selectedItem?.slot;
+
+        const checkSlot = this.get(`gear.${selectedItemSlot}`);
+
+        if(!checkSlot)
+        {
+        const equipItem = await this.set(`gear.${selectedItemSlot}`, selectedItem);
+
+        const equipAtt = await this.set(`stats.attack`, (selectedItem.stats.attack + currentAtt));
+        const equipCha = await this.set(`stats.charisma`, (selectedItem.stats.charisma + currentCha));
+        const equipInt = await this.set(`stats.intelligence`, (selectedItem.stats.intelligence + currentInt));
+        const equipDex = await this.set(`stats.dexterity`, (selectedItem.stats.dexterity + currentDex));
+        const equipLuck = await this.set(`stats.luck`, (selectedItem.stats.luck + currentLuck));
+
+        const removeFromBackpack = this.backpack.pull(selectedItem);
+        worked = true;
+        }
+        if(checkSlot)
+        {
+        const unequipItem = await this.unequipItemInternal(selectedItem.name, selectedItem);
+        const equipItem = await this.set(`gear.${selectedItemSlot}`, selectedItem);
+
+        const equipAtt = await this.set(`stats.attack`, (selectedItem.stats.attack + currentAtt));
+        const equipCha = await this.set(`stats.charisma`, (selectedItem.stats.charisma + currentCha));
+        const equipInt = await this.set(`stats.intelligence`, (selectedItem.stats.intelligence + currentInt));
+        const equipDex = await this.set(`stats.dexterity`, (selectedItem.stats.dexterity + currentDex));
+        const equipLuck = await this.set(`stats.luck`, (selectedItem.stats.luck + currentLuck));
+        const removeFromBackpack = this.backpack.pull(selectedItem);
+        worked = true;
+        }
+
+    }
+        const save = this.save();
+
+    
+    return worked;
+}
+
+PlayerSchema.methods.unequipItemInternal = async function (selectedItemName: string, selectedItem1?: IItem) {
+
+    const selectedItem: IItem | undefined = selectedItem1;
+
+    if (!selectedItem){
+        return;
+    }
+
+
+    let worked = false;
+    let slot = 'helmet';
+    for (let i = 0; i < 10; i++) {
+        if(selectedItem?.slot == 'head')
+        {
+            slot = 'helmet';
+        }
+        if(selectedItem?.slot == 'neck')
+        {
+            slot = 'amulet';
+        }
+        if(selectedItem?.slot == 'chest')
+        {
+            slot = 'armor';
+        }
+        if(selectedItem?.slot == 'left' || selectedItem?.slot == 'right' || selectedItem?.slot == 'two handed')
+        {
+            slot = 'weapon';
+        }
+        if(selectedItem?.slot == 'boots')
+        {
+            slot = 'boots';
+        }
+        if(selectedItem?.slot == 'legs')
+        {
+            slot = 'boots';
+        }
+        if(selectedItem?.slot == 'charm')
+        {
+            slot = 'rune';
+        }
+        if(selectedItem?.slot == 'ring')
+        {
+            slot = 'ring';
+        }
+        if(selectedItem?.slot == 'gloves')
+        {
+            slot = 'gloves';
+        }
+    }
+
+
+    const gear: IItem = this.get(`gear.${slot}`);
+
+    const unequipItem: Array<IItem> = await this.gear.slot.delete(gear);
+
+    const currentAtt = await this.get(`stats.attack`);
+    const currentCha = await this.get(`stats.charisma`);
+    const currentInt = await this.get(`stats.intelligence`);
+    const currentDex = await this.get(`stats.dexterity`);
+    const currentLuck = await this.get(`stats.luck`);
+
+    const equipAtt = await this.set(`stats.attack`, (currentAtt - selectedItem.stats.attack));
+    const equipCha = await this.set(`stats.charisma`, (currentCha - selectedItem.stats.charisma));
+    const equipInt = await this.set(`stats.intelligence`, (currentInt - selectedItem.stats.intelligence));
+    const equipDex = await this.set(`stats.dexterity`, (currentDex - selectedItem.stats.dexterity));
+    const equipLuck = await this.set(`stats.luck`, (currentLuck - selectedItem.stats.luck));
+
+    const removeFromBackpack = this.backpack.push(selectedItem);
+
+    const save = this.save();
+    const currentBackpack2: Array<IItem> = this.get('backpack');
+    for (let i = 0; i < currentBackpack2.length; i++) {
+        if(currentBackpack2[i].name == (selectedItem.name))
+        {
+            worked = true;
+        }
+    }
+    return worked;
+}
+
+
+PlayerSchema.methods.checkPlayerHaveItem = async function (name: string) {
+
+    let has = false;
+
+    const currentBackpack: Array<IItem> = this.get('backpack');
+    
+        for (let i = 0; i < currentBackpack.length; i++) {
+            if(currentBackpack[i].name.includes(name))
+            {
+                has = true;
+            }
+        }
+    
+    return has;
+}
+
 
 
 const Player = model<IPlayer>('Player', PlayerSchema);

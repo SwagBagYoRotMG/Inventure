@@ -242,6 +242,38 @@ class GenericCommands extends BaseCommands {
         return;
 
     }
+
+    async equip(name: string) {
+        let targetPlayerId = this.message.author.id;
+
+        const player: IPlayer | null = await Player.findOne({ id: targetPlayerId }).exec();
+
+        if (!player) {
+            this.message.channel.send('Player not found. Please try again');
+            return;
+        }
+
+        if (!name) {
+            this.message.channel.send('No item name placeholder.');
+            return;
+        }
+
+        const equipItem = await player.equip(name);
+
+        if (equipItem)
+        {
+            this.message.channel.send('Worked placeholder.');
+            const equipped = await player.get('gear');
+            this.message.channel.send(equipped);
+        }
+        else
+        {
+            this.message.channel.send('Did not work placeholder.');
+        }
+
+        return;
+
+    }
 }
 
 export { GenericCommands };
