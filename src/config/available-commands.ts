@@ -13,6 +13,8 @@ export default {
     loot: {class: GenericCommands, method: 'loot'},
     backpack: {class: GenericCommands, method: 'backpack'},
     equip: {class: GenericCommands, method: 'equip'},
+    unequip: {class: GenericCommands, method: 'unequip'},
+    equipped: {class: GenericCommands, method: 'showEquipped'},
 
     // Adventuring Commands
     adventure: { class: AdventureCommands, method: 'adventure' },

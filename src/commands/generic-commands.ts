@@ -18,6 +18,9 @@ import { makeUsedSkillpointsMessage } from "../messages/used-skillpoints";
 import { makeAvailableLootMessage } from "../messages/available-loot";
 import { IItem } from "../models/Item";
 import { makeChestsOpenedResultsMessage } from "../messages/chests-opened-results";
+import { makeEquippedItemsMessage } from "../messages/equipped-items";
+import { makeItemEquippedMessage } from "../messages/item-equipped";
+import { makeItemUnequippedMessage } from "../messages/item-unequipped";
 
 class GenericCommands extends BaseCommands {
     // stats([first, last]: [string?, string?]) {
@@ -233,9 +236,7 @@ class GenericCommands extends BaseCommands {
         }
 
         const backpack = await player.returnBackpack();
-
-        //console.log(backpack);
-
+        
         const formattedBackpack = await makeBackpackMessage(player, backpack);
 
         this.message.channel.send(formattedBackpack);
@@ -258,18 +259,72 @@ class GenericCommands extends BaseCommands {
             return;
         }
 
-        const equipItem = await player.equip(name);
+        const itemName = name.charAt(0).toUpperCase() + name.slice(1).trim();
 
-        if (equipItem)
+        const equipItem = await player.equip(itemName, player);
+
+        if (equipItem.worked)
         {
-            this.message.channel.send('Worked placeholder.');
-            const equipped = await player.get('gear');
-            this.message.channel.send(equipped);
+            const itemEquippedMessage = await makeItemEquippedMessage(equipItem.selectedItem, player);
+            this.message.channel.send(itemEquippedMessage);
         }
-        else
+        if (equipItem.noItem)
+        {
+            this.message.channel.send('You cannot equip an item you do not own!');
+            return;
+        }
+        if (!equipItem.worked)
         {
             this.message.channel.send('Did not work placeholder.');
         }
+        
+        return;
+
+    }
+
+    async unequip(name: string) {
+        let targetPlayerId = this.message.author.id;
+
+        const player: IPlayer | null = await Player.findOne({ id: targetPlayerId }).exec();
+
+        if (!player) {
+            this.message.channel.send('Player not found. Please try again');
+            return;
+        }
+
+        if (!name) {
+            this.message.channel.send('No item name placeholder.');
+            return;
+        }
+
+        const itemName = name.charAt(0).toUpperCase() + name.slice(1).trim();
+
+        const unequipItem = await player.unequipItemExternal(itemName, player);
+
+        if(unequipItem.worked == true)
+        {
+            const itemUnequippedMessage = await makeItemUnequippedMessage(unequipItem.currentlyEquippedItem, player);
+            this.message.channel.send(itemUnequippedMessage);
+            //this.message.channel.send('Item unequipped!');
+            return;
+        }
+
+        return;
+
+    }
+
+    async showEquipped() {
+        let targetPlayerId = this.message.author.id;
+
+        const player: IPlayer | null = await Player.findOne({ id: targetPlayerId }).exec();
+
+        if (!player) {
+            this.message.channel.send('Player not found. Please try again');
+            return;
+        }
+
+        const showEquipped = await makeEquippedItemsMessage(player);
+        this.message.channel.send(showEquipped);
 
         return;
 

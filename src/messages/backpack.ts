@@ -7,6 +7,11 @@ const makeBackpackMessage = (player: IPlayer, backpack: IItem[]) => {
     // TODO: Actually make stats pull from player data
     let originalSortedBackpack = backpack;
 
+    if(originalSortedBackpack.length <= 0)
+    {
+        return;
+    }
+
     for (let i = 0; i < originalSortedBackpack.length; i++) {
         if (originalSortedBackpack[i].rarity == 'rare' ) {
             originalSortedBackpack[i].name = `.`+originalSortedBackpack[i].name.split(' ').join('_');

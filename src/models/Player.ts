@@ -61,7 +61,7 @@ interface IPlayer extends Document {
     returnBackpack: Function,
     sortBackpack: Function,
     equip: Function,
-    unequip: Function,
+    unequipItemExternal: Function,
 }
 
 interface RewardResult {
@@ -248,15 +248,15 @@ const PlayerSchema = new Schema({
         },
     },
     gear: {
-        helmet: ItemSchema,
-        gloves: ItemSchema,
-        armor: ItemSchema,
-        weapon: ItemSchema,
-        shield: ItemSchema,
-        boots: ItemSchema,
-        amulet: ItemSchema,
-        ring: ItemSchema,
-        rune: ItemSchema,
+        helmet: [ItemSchema],
+        gloves: [ItemSchema],
+        armor: [ItemSchema],
+        weapon: [ItemSchema],
+        shield: [ItemSchema],
+        boots: [ItemSchema],
+        amulet: [ItemSchema],
+        ring: [ItemSchema],
+        rune: [ItemSchema],
     },
     backpack: [ItemSchema],
     adventures: {
@@ -916,26 +916,22 @@ PlayerSchema.methods.sortBackpack = async function () {
     return sorted;
 }
 
-PlayerSchema.methods.equip = async function (name: string) {
+PlayerSchema.methods.equip = async function (name: string, player: IPlayer) {
 
     const itemName = name;
     const check = await this.checkPlayerHaveItem(itemName);
+
     const currentBackpack: Array<IItem> = this.get('backpack');
+
     let selectedItem;
     let worked = false;
 
-    const currentAtt = await this.get(`stats.attack`);
-    const currentCha = await this.get(`stats.charisma`);
-    const currentInt = await this.get(`stats.intelligence`);
-    const currentDex = await this.get(`stats.dexterity`);
-    const currentLuck = await this.get(`stats.luck`);
-
-
-
-    
+    let noItem;
 
     if(check)
     {
+        noItem = false;
+
         for (let i = 0; i < currentBackpack.length; i++) {
             if(currentBackpack[i].name.includes(name))
             {
@@ -944,102 +940,97 @@ PlayerSchema.methods.equip = async function (name: string) {
 
             
         }
+
         if(!selectedItem){
             return;
         }
 
-        const selectedItemSlot = selectedItem?.slot;
+        let slot = 'helmet';
+        for (let i = 0; i < 15; i++) {
+            if(selectedItem?.slot == 'head')
+            {
+                slot = 'helmet';
+            }
+            if(selectedItem?.slot == 'neck')
+            {
+                slot = 'amulet';
+            }
+            if(selectedItem?.slot == 'chest')
+            {
+                slot = 'armor';
+            }
+            if(selectedItem?.slot == 'left' || selectedItem?.slot == 'right' || selectedItem?.slot == 'two handed')
+            {
+                slot = 'weapon';
+            }
+            if(selectedItem?.slot == 'boots')
+            {
+                slot = 'boots';
+            }
+            if(selectedItem?.slot == 'legs')
+            {
+                slot = 'boots';
+            }
+            if(selectedItem?.slot == 'charm')
+            {
+                slot = 'rune';
+            }
+            if(selectedItem?.slot == 'ring')
+            {
+                slot = 'ring';
+            }
+            if(selectedItem?.slot == 'gloves')
+            {
+                slot = 'gloves';
+            }
+        }
+        
+        const selectedItemSlot = slot;
 
-        const checkSlot = this.get(`gear.${selectedItemSlot}`);
+        const checkSlot = await this.checkPlayerHaveAnyItemEquippedSlot(player, slot)
 
-        if(!checkSlot)
+        console.log(checkSlot);
+
+        if(checkSlot.hasEquipped == false)
         {
         const equipItem = await this.set(`gear.${selectedItemSlot}`, selectedItem);
 
-        const equipAtt = await this.set(`stats.attack`, (selectedItem.stats.attack + currentAtt));
-        const equipCha = await this.set(`stats.charisma`, (selectedItem.stats.charisma + currentCha));
-        const equipInt = await this.set(`stats.intelligence`, (selectedItem.stats.intelligence + currentInt));
-        const equipDex = await this.set(`stats.dexterity`, (selectedItem.stats.dexterity + currentDex));
-        const equipLuck = await this.set(`stats.luck`, (selectedItem.stats.luck + currentLuck));
+        const setStats = await this.setStatsUponEquip(selectedItem);
 
         const removeFromBackpack = this.backpack.pull(selectedItem);
+
         worked = true;
         }
-        if(checkSlot)
+        if(checkSlot.hasEquipped == true)
         {
-        const unequipItem = await this.unequipItemInternal(selectedItem.name, selectedItem);
+        const unequipItem = await this.unequipItemInternal(checkSlot.selectedItem, player);
+        if(unequipItem){
+
         const equipItem = await this.set(`gear.${selectedItemSlot}`, selectedItem);
 
-        const equipAtt = await this.set(`stats.attack`, (selectedItem.stats.attack + currentAtt));
-        const equipCha = await this.set(`stats.charisma`, (selectedItem.stats.charisma + currentCha));
-        const equipInt = await this.set(`stats.intelligence`, (selectedItem.stats.intelligence + currentInt));
-        const equipDex = await this.set(`stats.dexterity`, (selectedItem.stats.dexterity + currentDex));
-        const equipLuck = await this.set(`stats.luck`, (selectedItem.stats.luck + currentLuck));
+        const setStats = await this.setStatsUponEquip(selectedItem);  
+
         const removeFromBackpack = this.backpack.pull(selectedItem);
+        
+        }
         worked = true;
         }
-
-    }
         const save = this.save();
+    }
+
+    if(!check)
+    {
+        noItem = true;
+    }
 
     
-    return worked;
+    return {worked, noItem, selectedItem};
 }
 
-PlayerSchema.methods.unequipItemInternal = async function (selectedItemName: string, selectedItem1?: IItem) {
+PlayerSchema.methods.setStatsUponEquip = async function (selectedItem: IItem) {
 
-    const selectedItem: IItem | undefined = selectedItem1;
-
-    if (!selectedItem){
-        return;
-    }
-
-
+    const currentBackpack: Array<IItem> = this.get('backpack');
     let worked = false;
-    let slot = 'helmet';
-    for (let i = 0; i < 10; i++) {
-        if(selectedItem?.slot == 'head')
-        {
-            slot = 'helmet';
-        }
-        if(selectedItem?.slot == 'neck')
-        {
-            slot = 'amulet';
-        }
-        if(selectedItem?.slot == 'chest')
-        {
-            slot = 'armor';
-        }
-        if(selectedItem?.slot == 'left' || selectedItem?.slot == 'right' || selectedItem?.slot == 'two handed')
-        {
-            slot = 'weapon';
-        }
-        if(selectedItem?.slot == 'boots')
-        {
-            slot = 'boots';
-        }
-        if(selectedItem?.slot == 'legs')
-        {
-            slot = 'boots';
-        }
-        if(selectedItem?.slot == 'charm')
-        {
-            slot = 'rune';
-        }
-        if(selectedItem?.slot == 'ring')
-        {
-            slot = 'ring';
-        }
-        if(selectedItem?.slot == 'gloves')
-        {
-            slot = 'gloves';
-        }
-    }
-
-
-    const gear: IItem = this.get(`gear.${slot}`);
-
-    const unequipItem: Array<IItem> = await this.gear.slot.delete(gear);
 
     const currentAtt = await this.get(`stats.attack`);
     const currentCha = await this.get(`stats.charisma`);
@@ -1047,25 +1038,184 @@ PlayerSchema.methods.unequipItemInternal = async function (selectedItemName: str
     const currentDex = await this.get(`stats.dexterity`);
     const currentLuck = await this.get(`stats.luck`);
 
-    const equipAtt = await this.set(`stats.attack`, (currentAtt - selectedItem.stats.attack));
-    const equipCha = await this.set(`stats.charisma`, (currentCha - selectedItem.stats.charisma));
-    const equipInt = await this.set(`stats.intelligence`, (currentInt - selectedItem.stats.intelligence));
-    const equipDex = await this.set(`stats.dexterity`, (currentDex - selectedItem.stats.dexterity));
-    const equipLuck = await this.set(`stats.luck`, (currentLuck - selectedItem.stats.luck));
 
-    const removeFromBackpack = this.backpack.push(selectedItem);
+    const equipAtt = await this.set(`stats.attack`, (selectedItem.stats.attack + currentAtt));
+    const equipCha = await this.set(`stats.charisma`, (selectedItem.stats.charisma + currentCha));
+    const equipInt = await this.set(`stats.intelligence`, (selectedItem.stats.intelligence + currentInt));
+    const equipDex = await this.set(`stats.dexterity`, (selectedItem.stats.dexterity + currentDex));
+    const equipLuck = await this.set(`stats.luck`, (selectedItem.stats.luck + currentLuck));
+
+    return this.save();
+
+}
+
+
+PlayerSchema.methods.unequipItemExternal = async function (selectedItemName: string, player: IPlayer) {
+
+
+    const externalItem = selectedItemName;
+
+    if (!selectedItemName){
+        return;
+    }
+
+    const currentlyEquippedItem = await this.checkPlayerHaveItemEquipped(selectedItemName, player);
+
+    console.log(currentlyEquippedItem);
+
+    if(currentlyEquippedItem == undefined)
+    {
+        return;
+    }
+
+    let worked = false;
+    let slot = 'helmet';
+ 
+        if(currentlyEquippedItem.slot == 'head')
+        {
+            slot = 'helmet';
+        }
+        if(currentlyEquippedItem.slot == 'neck')
+        {
+            slot = 'amulet';
+        }
+        if( currentlyEquippedItem.slot == 'chest')
+        {
+            slot = 'armor';
+        }
+        if(currentlyEquippedItem.slot == 'left' || currentlyEquippedItem.slot == 'right' || currentlyEquippedItem.slot == 'two handed')
+        {
+            slot = 'weapon';
+        }
+        if(currentlyEquippedItem.slot == 'boots')
+        {
+            slot = 'boots';
+        }
+        if(currentlyEquippedItem.slot == 'legs')
+        {
+            slot = 'boots';
+        }
+        if(currentlyEquippedItem.slot == 'charm')
+        {
+            slot = 'rune';
+        }
+        if(currentlyEquippedItem.slot == 'ring')
+        {
+            slot = 'ring';
+        }
+        if(currentlyEquippedItem.slot == 'gloves')
+        {
+            slot = 'gloves';
+        }
+    
+
+
+    const gear: IItem = player.get(`gear.${slot}`);
+
+    const currentAtt = await this.get(`stats.attack`);
+    const currentCha = await this.get(`stats.charisma`);
+    const currentInt = await this.get(`stats.intelligence`);
+    const currentDex = await this.get(`stats.dexterity`);
+    const currentLuck = await this.get(`stats.luck`);
+
+    const equipAtt = await this.set(`stats.attack`, (currentAtt - currentlyEquippedItem.stats.attack));
+    const equipCha = await this.set(`stats.charisma`, (currentCha - currentlyEquippedItem.stats.charisma));
+    const equipInt = await this.set(`stats.intelligence`, (currentInt - currentlyEquippedItem.stats.intelligence));
+    const equipDex = await this.set(`stats.dexterity`, (currentDex - currentlyEquippedItem.stats.dexterity));
+    const equipLuck = await this.set(`stats.luck`, (currentLuck - currentlyEquippedItem.stats.luck));
+
+
+    const putBackInBackpack = this.backpack.push(currentlyEquippedItem);
+    let pullEquippedItem = await player.set(`gear.${slot}`, []);
+
 
     const save = this.save();
+
     const currentBackpack2: Array<IItem> = this.get('backpack');
+
     for (let i = 0; i < currentBackpack2.length; i++) {
-        if(currentBackpack2[i].name == (selectedItem.name))
+        if(currentBackpack2[i].name == (currentlyEquippedItem.name))
+        {
+            worked = true;
+        }
+    }
+    return {worked, currentlyEquippedItem};
+}
+
+PlayerSchema.methods.unequipItemInternal = async function (currentlyEquippedItem: IItem, player: IPlayer) {
+
+let worked = false;
+
+    let slot = 'helmet';
+ 
+        if(currentlyEquippedItem.slot == 'head')
+        {
+            slot = 'helmet';
+        }
+        if(currentlyEquippedItem.slot == 'neck')
+        {
+            slot = 'amulet';
+        }
+        if( currentlyEquippedItem.slot == 'chest')
+        {
+            slot = 'armor';
+        }
+        if(currentlyEquippedItem.slot == 'left' || currentlyEquippedItem.slot == 'right' || currentlyEquippedItem.slot == 'two handed')
+        {
+            slot = 'weapon';
+        }
+        if(currentlyEquippedItem.slot == 'boots')
+        {
+            slot = 'boots';
+        }
+        if(currentlyEquippedItem.slot == 'legs')
+        {
+            slot = 'boots';
+        }
+        if(currentlyEquippedItem.slot == 'charm')
+        {
+            slot = 'rune';
+        }
+        if(currentlyEquippedItem.slot == 'ring')
+        {
+            slot = 'ring';
+        }
+        if(currentlyEquippedItem.slot == 'gloves')
+        {
+            slot = 'gloves';
+        }
+        
+
+    const currentAtt = await this.get(`stats.attack`);
+    const currentCha = await this.get(`stats.charisma`);
+    const currentInt = await this.get(`stats.intelligence`);
+    const currentDex = await this.get(`stats.dexterity`);
+    const currentLuck = await this.get(`stats.luck`);
+
+    const equipAtt = await this.set(`stats.attack`, (currentAtt - currentlyEquippedItem.stats.attack));
+    const equipCha = await this.set(`stats.charisma`, (currentCha - currentlyEquippedItem.stats.charisma));
+    const equipInt = await this.set(`stats.intelligence`, (currentInt - currentlyEquippedItem.stats.intelligence));
+    const equipDex = await this.set(`stats.dexterity`, (currentDex - currentlyEquippedItem.stats.dexterity));
+    const equipLuck = await this.set(`stats.luck`, (currentLuck - currentlyEquippedItem.stats.luck));
+
+
+    let pullEquippedItem = await player.set(`gear.${slot}`, []);
+    //this.gear.slot.pull(currentlyEquippedItem);
+
+    const putBackInBackpack = this.backpack.push(currentlyEquippedItem);
+
+   // const save = this.save();
+
+    const currentBackpack2: Array<IItem> = this.get('backpack');
+
+    for (let i = 0; i < currentBackpack2.length; i++) {
+        if(currentBackpack2[i].name == (currentlyEquippedItem.name))
         {
             worked = true;
         }
     }
     return worked;
 }
-
 
 PlayerSchema.methods.checkPlayerHaveItem = async function (name: string) {
 
@@ -1082,6 +1232,97 @@ PlayerSchema.methods.checkPlayerHaveItem = async function (name: string) {
     
     return has;
 }
+
+PlayerSchema.methods.checkPlayerHaveItemEquipped = async function (name: string, player: IPlayer) {
+
+    let hasEquipped = false;
+    let selectedItem;
+
+
+    let playerHelmet = await player.get('gear.helmet');
+    if (playerHelmet[0] != undefined && playerHelmet[0].name.includes(name))
+    {
+        selectedItem = playerHelmet[0];
+        hasEquipped = true;
+    }
+
+    let playerGloves = await player.get('gear.gloves');
+    if (playerGloves[0] != undefined && playerGloves[0].name.includes(name))
+    {
+        selectedItem = playerGloves[0];
+        hasEquipped = true;
+    }
+
+    let playerArmor = await player.get('gear.armor');
+    if (playerArmor[0] != undefined && playerArmor[0].name.includes(name))
+    {
+        selectedItem = playerArmor[0];
+        hasEquipped = true;
+    }
+
+    let playerWeapon = await player.get('gear.weapon');
+    if (playerWeapon[0] != undefined && playerWeapon[0].name.includes(name))
+    {
+        selectedItem = playerWeapon[0];
+        hasEquipped = true;
+        }
+
+    let playerShield = await player.get('gear.shield');
+    if (playerShield[0] != undefined && playerShield[0].name.includes(name))
+    {
+        selectedItem = playerShield[0];
+        hasEquipped = true;
+    }
+
+    let playerBoots = await player.get('gear.boots');
+    if (playerBoots[0] != undefined && playerBoots[0].name.includes(name))
+    {
+        selectedItem = playerBoots[0];
+        hasEquipped = true;
+    }
+
+    let playerAmulet = await player.get('gear.amulet');
+    if (playerAmulet[0] != undefined && playerAmulet[0].name.includes(name))
+    {
+        selectedItem = playerAmulet[0];
+        hasEquipped = true;
+    }
+
+    let playerRing = await player.get('gear.ring');
+    if (playerRing[0] != undefined && playerRing[0].name.includes(name))
+    {
+        selectedItem = playerRing[0];
+        hasEquipped = true;
+    }
+
+    let playerRune = await player.get('gear.rune');
+    if (playerRune[0] != undefined && playerRune[0].name.includes(name))
+    {
+        selectedItem = playerRune[0];
+        hasEquipped = true;
+    }
+
+    return selectedItem;
+}
+
+PlayerSchema.methods.checkPlayerHaveAnyItemEquippedSlot = async function (player: IPlayer, slot: string) {
+
+    let hasEquipped = false;
+    let selectedItem;
+
+
+    let playerSlot = await player.get(`gear.${slot}`);
+    if (playerSlot[0] != undefined)
+    {
+        selectedItem = playerSlot[0];
+        hasEquipped = true;
+    }
+
+    return {selectedItem, hasEquipped};
+}
+
+
+
 
 
 
